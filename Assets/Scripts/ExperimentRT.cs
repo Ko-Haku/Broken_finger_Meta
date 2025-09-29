@@ -73,11 +73,12 @@ public class ExperimentRT : MonoBehaviour
     [Header("Dark screen / CCT")]
     public GameObject darkScreen;
     public float darkScreenTime = 2f;
-
+    public float cctStartDelay = 1f; 
     [Header("Preview all’avvio")]
     public bool showFirstRigOnStart = true;
     public bool forceDeactivateOtherRigs = true;
     public float pauseBeforeFirstCCT = 0f;
+    private bool experimentRunning = false;   // <— NUOVO
 
     // Dati soggetto
     private string codiceSoggetto = "NA", condizione = "NA", numeroSoggetto = "NA";
@@ -121,20 +122,29 @@ public class ExperimentRT : MonoBehaviour
             // NEW: applica i parametri del primo blocco già in preview
             ApplyConditionParameters(plan[0]);
         }
+        if (darkScreen) darkScreen.SetActive(true);   // <— NUOVO
 
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.S))
-            StartCoroutine(RunExperiment());
-
-        if (showOpenAmountOnUI && feedbackText)
+        void Update()
         {
-            var rig = GetActiveRig();
-            if (rig != null && rig.pinchDriver != null)
-                feedbackText.text = $"OpenAmount: {rig.pinchDriver.openAmount:0.00}";
+            if (Input.GetKeyDown(KeyCode.S) && !experimentRunning)
+            {
+                if (darkScreen) darkScreen.SetActive(false); // 4) via darkscreen su start
+                experimentRunning = true;                    // 3) guardia anti-doppio avvio
+                StartCoroutine(RunExperiment());
+            }
+
+            if (showOpenAmountOnUI && feedbackText)
+            {
+                var rig = GetActiveRig();
+                if (rig != null && rig.pinchDriver != null)
+                    feedbackText.text = $"OpenAmount: {rig.pinchDriver.openAmount:0.00}";
+            }
         }
+
     }
 
     EffectorRig GetActiveRig()
@@ -388,7 +398,6 @@ public class ExperimentRT : MonoBehaviour
     {
         if (rig == null || rig.cctTask == null) yield break;
 
-        // durante CCT della mano: mostra entrambe
         if (rig.rigType == EffectorRig.RigType.Hand)
             rig.ShowBothHandVariants(true);
 
@@ -396,9 +405,14 @@ public class ExperimentRT : MonoBehaviour
         yield return new WaitForSeconds(darkScreenTime);
         if (darkScreen) darkScreen.SetActive(false);
 
+        // NUOVO: ritardo per evitare che il CCT parta "sotto" la dark
+        if (cctStartDelay > 0f)
+            yield return new WaitForSeconds(cctStartDelay);
+
         yield return StartCoroutine(rig.cctTask.StartMisura());
         SaveLog();
     }
+
 
     void LogRow(BlockPlan b, int ballsPopped, float durSec)
     {

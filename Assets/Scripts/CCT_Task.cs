@@ -11,19 +11,23 @@ public class CCT_Task : MonoBehaviour
     public GameObject indice;    // assegnalo dall'Inspector (opzionale)
 
     [Header("Managers on targets")]
-    public misura_manager misura_pollice;   // viene preso da pollice.GetComponent<misura_manager>()
-    public misura_manager misura_indice;    // viene preso da indice.GetComponent<misura_manager>()
+    public misura_manager misura_pollice;   // preso da pollice.GetComponent<misura_manager>()
+    public misura_manager misura_indice;    // preso da indice.GetComponent<misura_manager>()
 
     [Header("Trial setup")]
-    public int numeroTrials = 40;    // totale trials della sessione CCT
-    public int seedSync   = 40;      // quante prove sync disponibili (verrà copiato in runtime)
-    public int seedAsync  = 40;      // quante prove async disponibili (verrà copiato in runtime)
-    public float itiSeconds = 3.0f;  // tempo tra prove (2.9 + 0.1 nel tuo codice)
+    public int numeroTrials = 40;           // totale trials della sessione CCT
+    public int seedSync   = 40;             // quante prove sync disponibili (copiate in runtime)
+    public int seedAsync  = 40;             // quante prove async disponibili (copiate in runtime)
+    public float itiSeconds = 3.0f;         // finestra totale (≈ 2.9 + 0.1)
 
     [Header("Inputs (test)")]
-    public KeyCode startKey = KeyCode.Y;    // avvio manuale (per debug)
+    public KeyCode startKey = KeyCode.Y;    // avvio manuale (debug)
     public KeyCode respA = KeyCode.Mouse0;  // risposta "medio"
     public KeyCode respB = KeyCode.Mouse1;  // risposta "indice"
+
+    [Header("Delays")]
+    public float postResponseDelay = 1.0f;  // 1) pausa DOPO la risposta prima del trial successivo
+    public float preStartDelay     = 1.0f;  // 2) pausa DOPO la darkscreen, PRIMA di iniziare i trials
 
     [Header("Logging")]
     public List<string> logData;
@@ -41,7 +45,7 @@ public class CCT_Task : MonoBehaviour
     private string numeroSoggetto;
 
     // Stato risposta per questa trial
-    private bool attivo;  // equivale al tuo "interruttore == false"
+    private bool attivo;  // equivale al vecchio "interruttore == false"
     private int remainingSync;
     private int remainingAsync;
 
@@ -84,8 +88,7 @@ public class CCT_Task : MonoBehaviour
 
         if (pollice == null || indice == null)
         {
-            UnityEngine.Debug.LogError("CCT_Task: 'pollice' o 'indice' non trovati in scena. " +
-                                       "Assegna i GameObject o rinominali correttamente.");
+            UnityEngine.Debug.LogError("CCT_Task: 'pollice' o 'indice' non trovati in scena.");
             yield break;
         }
 
@@ -98,6 +101,10 @@ public class CCT_Task : MonoBehaviour
             yield break;
         }
 
+        // 2) pausa dopo la darkscreen (gestita da ExperimentRT) prima di iniziare i trials
+        if (preStartDelay > 0f)
+            yield return new WaitForSeconds(preStartDelay);
+
         // Reset contatori prova
         remainingSync  = seedSync;
         remainingAsync = seedAsync;
@@ -109,7 +116,7 @@ public class CCT_Task : MonoBehaviour
         {
             current_Trial = i;
 
-            // Random: 0 = 'medio' come canale luce, 1 = 'indice' come canale luce
+            // Random: 0 = 'medio' come canale luce, 1 = 'indice'
             int latoLuce = Random.Range(0, 2);
             int syncAsync = Random.Range(0, 2); // 0 preferisci async, 1 preferisci sync (con fallback)
 
@@ -123,7 +130,6 @@ public class CCT_Task : MonoBehaviour
             {
                 if ((syncAsync == 0 && remainingAsync > 0) || remainingSync == 0)
                 {
-                    // Async_medio: luce medio + haptic indice
                     Trial_type = "Async_medio";
                     remainingAsync--;
                     StartCoroutine(misura_pollice.accendispegni_luce());
@@ -131,7 +137,6 @@ public class CCT_Task : MonoBehaviour
                 }
                 else
                 {
-                    // Sync_medio: luce medio + haptic medio
                     Trial_type = "Sync_medio";
                     remainingSync--;
                     StartCoroutine(misura_pollice.accendispegni_luce());
@@ -142,7 +147,6 @@ public class CCT_Task : MonoBehaviour
             {
                 if ((syncAsync == 0 && remainingAsync > 0) || remainingSync == 0)
                 {
-                    // Async_indice: luce indice + haptic medio
                     Trial_type = "Async_indice";
                     remainingAsync--;
                     StartCoroutine(misura_indice.accendispegni_luce());
@@ -150,7 +154,6 @@ public class CCT_Task : MonoBehaviour
                 }
                 else
                 {
-                    // Sync_indice: luce + haptic indice
                     Trial_type = "Sync_indice";
                     remainingSync--;
                     StartCoroutine(misura_indice.accendispegni_luce());
@@ -161,7 +164,7 @@ public class CCT_Task : MonoBehaviour
             // Start timer prova
             zeit.Start();
 
-            // Finestra di risposta (≈ 3 s)
+            // Finestra di risposta (≈ itiSeconds)
             float t = 0f;
             while (t < itiSeconds && attivo)
             {
@@ -169,24 +172,29 @@ public class CCT_Task : MonoBehaviour
                 yield return null;
             }
 
-            // Se non è arrivata risposta, segna NA
             if (attivo)
             {
+                // Nessuna risposta: NA
                 var ms = "NA";
                 zeit.Stop();
                 zeit.Reset();
                 risposta = "NA";
                 SaveData(ms);
                 attivo = false;
-            }
 
-            // Piccolo gap extra (equivaleva al tuo 0.1f)
-            yield return new WaitForSeconds(0.1f);
+                // gap breve come prima (0.1)
+                yield return new WaitForSeconds(0.1f);
+            }
+            else
+            {
+                // 1) risposta arrivata → delay prima del prossimo trial
+                if (postResponseDelay > 0f)
+                    yield return new WaitForSeconds(postResponseDelay);
+            }
         }
 
         misurando = false;
         IsRunning = false;
-        // niente experiment.via = true; (era per il vecchio manager)
         yield break;
     }
 

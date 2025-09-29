@@ -1,2 +1,5 @@
 CodiceSoggetto,NumeroSoggetto,Condizione,Trial,Type,Response,Time(ms)
-PROVAA,1,3,1,Async_indice,NA,NA
+PROVAA,4,3,1,Sync_medio,NA,NA
+PROVAA,4,3,2,Sync_medio,medio,311
+PROVAA,4,3,3,Async_medio,medio,1116
+PROVAA,4,3,1,Async_indice,NA,NA
