@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6086656640842134424
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6086656640842134426}
+  - component: {fileID: 6086656640842134425}
+  - component: {fileID: 1615539086965425732}
+  m_Layer: 0
+  m_Name: Client
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &6086656640842134426
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6086656640842134424}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.54043424, y: 1.2955163, z: -0.0071664047}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6086656640842134425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6086656640842134424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0654be93d1ded334ab20342b78e3d92a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  port: 0
+  lastReceivedUDPPacket: 
+  allReceivedUDPPackets: 
+--- !u!114 &1615539086965425732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6086656640842134424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cac876633636164597f3ac3085d63f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prox_check: 0
+  toltime: 0
+  spostamenti: 0
+  Numero_restart: 0
+  T0: 
+  T1: 
+  T_prox: 
+  T_inizio: 
+  T_fine: 
+  stream: 
+  fail_number: 0
+  nome_cognome: sogg2
+  debugger: 0
+  Attiva_Tool_lungo: 0
+  Tool_lungo: {fileID: 0}
+  Tool_corto: {fileID: 0}
+  esito: 
+  tempo: 0
+  condition: gruppo 2

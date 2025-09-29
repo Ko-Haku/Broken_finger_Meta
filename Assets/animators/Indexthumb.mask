@@ -1,0 +1,171 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!319 &31900000
+AvatarMask:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Indexthumb
+  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Elements:
+  - m_Path: 
+    m_Weight: 1
+  - m_Path: b_r_wrist
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_forearm_stub
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/b_r_index3
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/b_r_index3/b_r_index_null
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/b_r_index3/r_index_finger_pad_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/b_r_index3/r_index_finger_tip_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/b_r_index3/r_index_fingernail_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1/b_r_index2/r_index_dip_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_index1/r_index_pip_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_middle1
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/b_r_middle3
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/b_r_middle3/b_r_middle_null
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/b_r_middle3/r_middle_finger_pad_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/b_r_middle3/r_middle_finger_tip_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/b_r_middle3/r_middle_fingernail_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/b_r_middle2/r_middle_dip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/r_middle_knuckle_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_middle1/r_middle_pip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/b_r_pinky3
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/b_r_pinky3/b_r_pinky_null
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/b_r_pinky3/r_pinky_finger_pad_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/b_r_pinky3/r_pinky_finger_tip_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/b_r_pinky3/r_pinky_fingernail_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/b_r_pinky2/r_pinky_dip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_pinky0/b_r_pinky1/r_pinky_pip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/b_r_ring3
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/b_r_ring3/b_r_ring_null
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/b_r_ring3/r_ring_finger_pad_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/b_r_ring3/r_ring_finger_tip_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/b_r_ring3/r_ring_fingernail_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/b_r_ring2/r_ring_dip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_ring1/r_ring_pip_fe_axis_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/b_r_thumb3
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/b_r_thumb3/b_r_thumb_null
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/b_r_thumb3/r_thumb_finger_pad_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/b_r_thumb3/r_thumb_finger_tip_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/b_r_thumb3/r_thumb_fingernail_marker
+    m_Weight: 1
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/b_r_thumb2/r_thumb_ip_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/r_thumb_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/r_thumb_mcp_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/b_r_thumb0/b_r_thumb1/r_thumb_palm_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_mcp_aa_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_mcp_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_palm_collider_base0_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_palm_collider_base1_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_index_palm_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_middle_mcp_aa_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_middle_mcp_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_middle_palm_collider_base0_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_middle_palm_collider_base1_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_middle_palm_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_palm_center_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_mcp_aa_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_mcp_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_palm_collider_base0_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_palm_collider_base1_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_pinky_palm_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_mcp_aa_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_mcp_fe_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_palm_collider_base0_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_palm_collider_base1_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_ring_palm_knuckle_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_thumb_cmc_aa_axis_marker
+    m_Weight: 0
+  - m_Path: b_r_wrist/r_thumb_cmc_fe_axis_marker
+    m_Weight: 0
+  - m_Path: r_handMeshNode
+    m_Weight: 0

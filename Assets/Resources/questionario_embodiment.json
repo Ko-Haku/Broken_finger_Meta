@@ -1,0 +1,56 @@
+{
+  "domande": [
+    {
+      "id": "D1",
+      "testoConPlaceholder": "Ho sentito come se lo strumento virtuale fosse la mia mano"
+    },
+    {
+        "id": "D2",
+        "testoConPlaceholder": "Sembrava che lo strumento virtuale che vedevo fosse di qualcun altro"
+    },
+    {
+      "id": "D3",
+      "testoConPlaceholder": "Sembrava che potessi avere più di una mano"
+    },
+    {
+        "id": "D6",
+        "testoConPlaceholder": "Sembrava che potessi controllare lo strumento virtuale come se fosse la mia mano"
+    },
+    {
+        "id": "D7",
+        "testoConPlaceholder": "I movimenti dello strumento virtuale erano causati dai miei movimenti"
+    },
+    {
+        "id": "D8",
+        "testoConPlaceholder": "Sembrava che i movimenti dello strumento virtuale influenzassero i miei"
+    },
+    {
+        "id": "D9",
+        "testoConPlaceholder": "Sembrava che lo strumento virtuale si muovesse da solo"
+    },
+    {
+        "id": "D14",
+        "testoConPlaceholder": "Ho sentito come se la mia mano fosse localizzata dove vedevo lo strumento virtuale"
+    },
+    {
+      "id": "D15",
+      "testoConPlaceholder": "Mi sono sentito fuori dal mio corpo"
+    },
+    {
+        "id": "D17",
+        "testoConPlaceholder": "Sembrava che la mia mano si stesse trasformando in uno strumento virtuale"
+    },
+    {
+        "id": "D18",
+        "testoConPlaceholder": "A un certo punto ho avuto l’impressione che la mia mano stesse assumendo la postura o la forma dello strumento virtuale che vedevo"
+    },
+    {
+        "id": "D19",
+        "testoConPlaceholder": "A un certo punto mi è sembrato che lo strumento virtuale somigliasse alla mia mano, per forma, tono della pelle o altri aspetti visivi"
+    },
+    {
+      "id": "D20",
+      "testoConPlaceholder": "Mi sembrava di indossare abiti diversi da quelli con cui ero arrivato al laboratorio"
+    }
+  ]
+}

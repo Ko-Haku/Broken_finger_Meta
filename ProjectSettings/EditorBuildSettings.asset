@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scene/SampleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scene/Eco_1.unity
+    guid: 1181287c74fda444c938b58187c5e89a
+  - enabled: 1
+    path: Assets/Scene/Eco_2.unity
+    guid: 5ed66ab5a3c7e59479d180e46e19fbf1
+  - enabled: 1
+    path: Assets/Scene/Eco_3.unity
+    guid: dd683938b87c580449a7d5b6618c4ade
+  - enabled: 1
+    path: Assets/Scene/Bisection.unity
+    guid: c36ba3885acd7b74ba3e5f0973eaa09e
+  - enabled: 1
+    path: Assets/Scene/Questionario - embodiment.unity
+    guid: b069de8a3b6963742be90e1cd2a2d5c9
+  - enabled: 1
+    path: Assets/Scene/Reachability.unity
+    guid: 235116af54d4a5f45bacd160a8709369
+  m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 4ca839862f7b1754b942dd294368f36d, type: 2}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 1354ea33d31740f48b1b8ea4a380691a, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: c1d0044c9ba789e44ae6a810f74e1e20, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 82d37346394e03f44943d213b5c272f7, type: 2}
+  m_UseUCBPForAssetBundles: 0

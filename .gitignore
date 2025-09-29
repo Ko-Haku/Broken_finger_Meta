@@ -1,0 +1,28 @@
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+Artifacts/
+UserSettings/        # spesso meglio ignorare settaggi locali
+
+# Autogenerati IDE
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.tmp
+*.userprefs
+.vscode/
+.vs/
+
+# Crash/Profiler
+*.stacktrace
+
+# OS junk
+.DS_Store
+Thumbs.db
