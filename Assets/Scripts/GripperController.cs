@@ -16,18 +16,21 @@ public class GripperController : MonoBehaviour
     [Tooltip("Distanza (cm) per apertura massima")]
     public float openDistanceCm = 7f;
 
-    [SerializeField]
-    [Tooltip("Angolo massimo (deg) quando si è all'openDistanceCm")]
-    private float maxAngleDeg = 90f; // <- baseline di default
+    [SerializeField, Tooltip("Angolo massimo (deg) 'rigido' (90/120/150)")]
+    private float maxAngleDeg = 90f; // baseline
 
-    /// <summary>
-    /// Property per compatibilità con ExperimentRT (setter usato per 90/120/150).
-    /// </summary>
+    /// Setter/Getter usato da ExperimentRT (90/120/150).
     public float MaxAngleDeg
     {
         get => maxAngleDeg;
         set => maxAngleDeg = value;
     }
+
+    [Header("Soft limit (gioco oltre il max)")]
+    [Tooltip("Gradi extra 'elastici' oltre il max rigido (gioco).")]
+    public float softExtraDeg = 12f;
+    [Tooltip("Isteresi in rientro (opz) per non schioccare subito sotto il max).")]
+    public float hysteresisDeg = 2f;
 
     [Header("Direzione / segno")]
     [Tooltip("Se l'angolo va nella direzione opposta, inverti")]
@@ -35,7 +38,7 @@ public class GripperController : MonoBehaviour
 
     [Header("Smoothing")]
     [Tooltip("Tempo di smussamento (s) verso il nuovo angolo")]
-    public float smoothTime = 0.05f;
+    public float smoothTime = 0.06f;
 
     // runtime
     private Quaternion topJawInitialLocalRot;
@@ -64,16 +67,42 @@ public class GripperController : MonoBehaviour
         float t = Mathf.InverseLerp(neutralDistanceCm, openDistanceCm, distCm);
         t = Mathf.Clamp01(t);
 
-        // angolo desiderato
-        float angle = t * maxAngleDeg;
-        if (invertAngle) angle = -angle;
+        // 1) target "grezzo" che POTREBBE arrivare fino al soft-max
+        float softMax = Mathf.Abs(maxAngleDeg) + Mathf.Max(0f, softExtraDeg);
+        float targetRaw = t * softMax;
 
-        // clamp "di sicurezza"
-        float hardClamp = Mathf.Abs(maxAngleDeg) * 2f;
-        angle = Mathf.Clamp(angle, -hardClamp, hardClamp);
+        // 2) soft-knee: sotto max -> lineare; sopra max -> curva morbida fino al softMax
+        float desired;
+        if (targetRaw <= maxAngleDeg)
+        {
+            desired = targetRaw;
+        }
+        else
+        {
+            // porzione oltre il max, normalizzata 0..1
+            float over = targetRaw - maxAngleDeg;
+            float u = Mathf.Clamp01(softExtraDeg <= 0f ? 0f : (over / softExtraDeg));
 
-        // smoothing
-        currentAngle = Mathf.SmoothDamp(currentAngle, angle, ref angleVel, smoothTime);
+            // smoothstep: 0 -> 0, 1 -> 1, con derivata 0 agli estremi (curva morbida)
+            float eased = u * u * (3f - 2f * u);
+
+            desired = maxAngleDeg + eased * softExtraDeg;
+        }
+
+        // Isteresi in rientro (opzionale): se stavi sopra al max, non rientrare “a scatto”
+        if (currentAngle > maxAngleDeg && desired < maxAngleDeg)
+        {
+            desired = Mathf.Max(desired, maxAngleDeg - Mathf.Max(0f, hysteresisDeg));
+        }
+
+        if (invertAngle) desired = -desired;
+
+        // clamp di sicurezza (± 2× softMax)
+        float hardClamp = softMax * 2f;
+        desired = Mathf.Clamp(desired, -hardClamp, hardClamp);
+
+        // smoothing verso il nuovo target
+        currentAngle = Mathf.SmoothDamp(currentAngle, desired, ref angleVel, smoothTime);
 
         // applica rotazione solo alla ganascia superiore attorno all'asse locale definito
         var q = Quaternion.AngleAxis(currentAngle, hingeAxisLocal.normalized);
@@ -95,9 +124,10 @@ public class GripperController : MonoBehaviour
                 MaxAngleDeg = 150f;  // ++ escursione
                 break;
         }
+        // opzionale: puoi variare anche il gioco per condizione, se vuoi
+        // es: softExtraDeg = (s == ExperimentRT.Stretch.Baseline) ? 10f : (s == ExperimentRT.Stretch.Stretch1 ? 12f : 14f);
     }
 
-    // --- Utility di calibrazione dal menu di context ---
     [ContextMenu("Calibra Neutral = distanza attuale")]
     public void CalibrateNeutral()
     {

@@ -4787,6 +4787,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &73179760
@@ -11849,6 +11851,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &228038153
@@ -15223,6 +15227,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &288889439
@@ -17910,6 +17916,7 @@ MonoBehaviour:
   respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  customRigId: 
   logData: []
 --- !u!114 &346412692
 MonoBehaviour:
@@ -30295,6 +30302,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &593669599
@@ -30743,6 +30752,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &596744865
@@ -39105,8 +39116,10 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 90
+  softExtraDeg: 8
+  hysteresisDeg: 2
   invertAngle: 0
-  smoothTime: 0.05
+  smoothTime: 0.09
 --- !u!1001 &733434642
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49071,6 +49084,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1001 &930201575
@@ -51990,6 +52005,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 90
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!114 &976462578 stripped
@@ -52195,6 +52212,7 @@ MonoBehaviour:
   respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  customRigId: PinzaRIG
   logData: []
 --- !u!114 &982289299
 MonoBehaviour:
@@ -53438,6 +53456,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1019281979
@@ -56550,7 +56570,7 @@ PrefabInstance:
     - target: {fileID: 299417612879446346, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4a975aa34f718364a806923e0725acce, type: 2}
+      objectReference: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
     - target: {fileID: 1127676657396636081, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -59504,6 +59524,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1140479878
@@ -68413,6 +68435,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1286336104
@@ -69446,6 +69470,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!4 &1306948680 stripped
@@ -82825,7 +82851,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1570462155}
   - component: {fileID: 1570462157}
-  - component: {fileID: 1570462154}
   - component: {fileID: 1570462156}
   - component: {fileID: 1570462158}
   m_Layer: 0
@@ -82835,44 +82860,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1570462154
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1570462153}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 454702d3e866fd14bb1d472e706c1be4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  sferabuia: {fileID: 1325187072}
-  ballPrefab: {fileID: 299417612879446324, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
-  fingerSpawnPoint: {fileID: 1892465127}
-  toolSpawnPoint: {fileID: 0}
-  wrist: {fileID: 46514570}
-  toolWrist: {fileID: 0}
-  finger: {fileID: 1859300695}
-  tool: {fileID: 1272891391}
-  useToolCondition: 0
-  fingerMultiplier: 1.6
-  trialsPerBlock: 8
-  blocks: 4
-  currentTrial: 0
-  currentBlock: 0
-  poppedBallsCount: 0
-  via: 0
-  nome: 
-  cognome: 
-  numeroSoggetto: 
-  currentBalls: []
-  ballTouched: 1
-  cctStartMeasurementKey: 109
-  trialDuration: 3
-  numberOfBalls: 7
-  ballSpacing: 0.005
-  respawnDelay: 2
 --- !u!4 &1570462155
 Transform:
   m_ObjectHideFlags: 0
@@ -82904,7 +82891,7 @@ MonoBehaviour:
   indice: {fileID: 1885057817}
   misura_pollice: {fileID: 0}
   misura_indice: {fileID: 0}
-  numeroTrials: 3
+  numeroTrials: 10
   seedSync: 40
   seedAsync: 40
   itiSeconds: 3
@@ -82913,6 +82900,7 @@ MonoBehaviour:
   respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  customRigId: ManoRig
   logData: []
 --- !u!114 &1570462157
 MonoBehaviour:
@@ -82926,9 +82914,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6538611871744468c2b22b6d9b710e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Codice_Soggetto: PROVAA
-  Condizione: 3
-  NumeroSoggetto: 4
+  Codice_Soggetto: ADPA
+  Condizione: 1
+  NumeroSoggetto: 1
 --- !u!114 &1570462158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82956,12 +82944,12 @@ MonoBehaviour:
   startPoseTimeoutSec: 6
   pinchMax: 0.25
   handBaseline_dMin: 0.03
-  handBaseline_dMax: 0.2
+  handBaseline_dMax: 0.25
   handStretch1_dMin: 0.03
-  handStretch1_dMax: 0.16
+  handStretch1_dMax: 0.18
   handStretch2_dMin: 0.03
   handStretch2_dMax: 0.12
-  pinzaBaseline_maxDeg: 90
+  pinzaBaseline_maxDeg: 80
   pinzaStretch1_maxDeg: 120
   pinzaStretch2_maxDeg: 140
   pinzaController: {fileID: 733309607}
@@ -83804,6 +83792,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1579584990
@@ -92810,6 +92800,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1735189775
@@ -94645,6 +94637,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1768337131
@@ -95270,6 +95264,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1779393614
@@ -96413,7 +96409,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -99045,6 +99041,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 90
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1867991203
@@ -103241,6 +103239,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1954740666
@@ -105290,6 +105290,8 @@ MonoBehaviour:
   neutralDistanceCm: 3
   openDistanceCm: 7
   maxAngleDeg: 30
+  softExtraDeg: 12
+  hysteresisDeg: 2
   invertAngle: 0
   smoothTime: 0.05
 --- !u!1 &1995128475

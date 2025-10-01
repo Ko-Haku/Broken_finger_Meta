@@ -128,8 +128,7 @@ public class ExperimentRT : MonoBehaviour
 
     void Update()
     {
-        void Update()
-        {
+       
             if (Input.GetKeyDown(KeyCode.S) && !experimentRunning)
             {
                 if (darkScreen) darkScreen.SetActive(false); // 4) via darkscreen su start
@@ -143,7 +142,7 @@ public class ExperimentRT : MonoBehaviour
                 if (rig != null && rig.pinchDriver != null)
                     feedbackText.text = $"OpenAmount: {rig.pinchDriver.openAmount:0.00}";
             }
-        }
+        
 
     }
 

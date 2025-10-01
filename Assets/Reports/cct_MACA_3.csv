@@ -1,9 +1,0 @@
-CodiceSoggetto,NumeroSoggetto,Condizione,Trial,Type,Response,Time(ms)
-MACA,14,3,1,Sync_medio,NA,NA
-MACA,14,3,2,Async_medio,NA,NA
-MACA,14,3,1,Async_medio,NA,NA
-MACA,14,3,2,Async_medio,NA,NA
-MACA,14,3,3,Sync_medio,NA,NA
-MACA,14,3,4,Sync_medio,NA,NA
-MACA,14,3,5,Async_indice,NA,NA
-MACA,14,3,6,Async_medio,NA,NA

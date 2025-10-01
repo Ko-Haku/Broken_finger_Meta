@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Diagnostics;
+using System;
 
 public class CCT_Task : MonoBehaviour
 {
@@ -26,10 +27,15 @@ public class CCT_Task : MonoBehaviour
     public KeyCode respB = KeyCode.Mouse1;  // risposta "indice"
 
     [Header("Delays")]
-    public float postResponseDelay = 1.0f;  // 1) pausa DOPO la risposta prima del trial successivo
-    public float preStartDelay     = 1.0f;  // 2) pausa DOPO la darkscreen, PRIMA di iniziare i trials
+    public float postResponseDelay = 1.0f;  // pausa DOPO la risposta prima del trial successivo
+    public float preStartDelay     = 1.0f;  // pausa DOPO la darkscreen, PRIMA di iniziare i trials
 
     [Header("Logging")]
+    [Tooltip("Se vuoto usa gameObject.name")]
+    public string customRigId = "";         // ID del rig per file e colonna
+    private string rigId;                   // risolto a Start
+    private string runStamp;                // YYYYMMDD_HHMMSS per file univoco
+    private string filePath;                // path completo del CSV
     public List<string> logData;
 
     // runtime
@@ -52,13 +58,28 @@ public class CCT_Task : MonoBehaviour
     void Start()
     {
         zeit = new Stopwatch();
-        var pi = ParticipantInfo.Instance;
-        nome = pi != null ? pi.Codice_Soggetto : "NA";
-        cognome = pi != null ? pi.Condizione : "NA";
-        numeroSoggetto = pi != null ? pi.NumeroSoggetto : "NA";
 
+        var pi = ParticipantInfo.Instance;
+        nome = pi != null ? Safe(pi.Codice_Soggetto) : "NA";
+        cognome = pi != null ? Safe(pi.Condizione)   : "NA";
+        numeroSoggetto = pi != null ? Safe(pi.NumeroSoggetto) : "NA";
+
+        rigId = string.IsNullOrWhiteSpace(customRigId) ? Safe(gameObject.name) : Safe(customRigId);
+        runStamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+        // Prepara directory e percorso file *unico per rig e per run*
+        string directoryPath = Path.Combine(Application.dataPath, "Reports");
+        if (!Directory.Exists(directoryPath))
+            Directory.CreateDirectory(directoryPath);
+
+        filePath = Path.Combine(directoryPath, $"cct_{nome}_{cognome}_{rigId}_{runStamp}.csv");
+
+        // Header
         logData = new List<string>();
-        logData.Add("CodiceSoggetto,NumeroSoggetto,Condizione,Trial,Type,Response,Time(ms)");
+        logData.Add("CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)");
+
+        // Scrivi subito l'header (così il file esiste da subito)
+        File.WriteAllLines(filePath, logData);
     }
 
     void Update()
@@ -88,7 +109,7 @@ public class CCT_Task : MonoBehaviour
 
         if (pollice == null || indice == null)
         {
-            UnityEngine.Debug.LogError("CCT_Task: 'pollice' o 'indice' non trovati in scena.");
+            UnityEngine.Debug.LogError($"[{rigId}] CCT_Task: 'pollice' o 'indice' non trovati in scena.");
             yield break;
         }
 
@@ -97,11 +118,11 @@ public class CCT_Task : MonoBehaviour
 
         if (misura_pollice == null || misura_indice == null)
         {
-            UnityEngine.Debug.LogError("CCT_Task: manca 'misura_manager' su pollice/indice.");
+            UnityEngine.Debug.LogError($"[{rigId}] CCT_Task: manca 'misura_manager' su pollice/indice.");
             yield break;
         }
 
-        // 2) pausa dopo la darkscreen (gestita da ExperimentRT) prima di iniziare i trials
+        // Pausa dopo la darkscreen prima di iniziare i trials
         if (preStartDelay > 0f)
             yield return new WaitForSeconds(preStartDelay);
 
@@ -117,8 +138,8 @@ public class CCT_Task : MonoBehaviour
             current_Trial = i;
 
             // Random: 0 = 'medio' come canale luce, 1 = 'indice'
-            int latoLuce = Random.Range(0, 2);
-            int syncAsync = Random.Range(0, 2); // 0 preferisci async, 1 preferisci sync (con fallback)
+            int latoLuce  = UnityEngine.Random.Range(0, 2);
+            int syncAsync = UnityEngine.Random.Range(0, 2); // 0 preferisci async, 1 preferisci sync (con fallback)
 
             Trial_type = "NA";
             attivo = true;
@@ -179,7 +200,7 @@ public class CCT_Task : MonoBehaviour
                 zeit.Stop();
                 zeit.Reset();
                 risposta = "NA";
-                SaveData(ms);
+                AppendRow(ms);
                 attivo = false;
 
                 // gap breve come prima (0.1)
@@ -187,7 +208,7 @@ public class CCT_Task : MonoBehaviour
             }
             else
             {
-                // 1) risposta arrivata → delay prima del prossimo trial
+                // risposta arrivata → delay prima del prossimo trial
                 if (postResponseDelay > 0f)
                     yield return new WaitForSeconds(postResponseDelay);
             }
@@ -206,25 +227,25 @@ public class CCT_Task : MonoBehaviour
         var MS = zeit.ElapsedMilliseconds.ToString();
         zeit.Reset();
         risposta = resp;
-        SaveData(MS);
+        AppendRow(MS);
         attivo = false;
     }
 
-    void SaveData(string ms)
+    // -- Logging helpers --
+
+    void AppendRow(string ms)
     {
-        string logEntry = $"{nome},{numeroSoggetto},{cognome},{current_Trial + 1},{Trial_type},{risposta},{ms}";
-        logData.Add(logEntry);
-        SaveLogToFile();
+        // Riga con colonna RigId
+        string row = $"{nome},{numeroSoggetto},{cognome},{rigId},{current_Trial + 1},{Trial_type},{risposta},{ms}";
+        // Append sul file unico di questa run/rig
+        File.AppendAllLines(filePath, new[] { row });
     }
 
-    public void SaveLogToFile()
+    static string Safe(string s)
     {
-        string directoryPath = Path.Combine(Application.dataPath, "Reports");
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
-
-        string filePath = Path.Combine(directoryPath, $"cct_{nome}_{cognome}.csv");
-        File.WriteAllLines(filePath, logData);
-        UnityEngine.Debug.Log($"CCT saved: {filePath}");
+        if (string.IsNullOrEmpty(s)) return "NA";
+        foreach (char c in Path.GetInvalidFileNameChars())
+            s = s.Replace(c, '_');
+        return s.Replace(' ', '_');
     }
 }
