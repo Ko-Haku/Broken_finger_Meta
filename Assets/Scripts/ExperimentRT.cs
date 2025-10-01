@@ -56,11 +56,16 @@ public class ExperimentRT : MonoBehaviour
     public float handStretch2_dMin = 0.030f;
     public float handStretch2_dMax = 0.050f;
 
-    [Header("Parametri Pinza (Gripper)")]
-    // Max angle per le tre condizioni
-    public float pinzaBaseline_maxDeg = 90f;
-    public float pinzaStretch1_maxDeg = 120f;
-    public float pinzaStretch2_maxDeg = 150f;
+    // === Parametri Pinza (ANIMATOR via PinchOpenDriver_Interaction) ===
+// Usa la stessa logica della mano: dMin/dMax -> openAmount -> Animator("Open")
+    [Header("Parametri Pinza (Animator driver)")]
+    public float pinzaBaseline_dMin = 0.020f;
+    public float pinzaBaseline_dMax = 0.080f;
+    public float pinzaStretch1_dMin = 0.020f;
+    public float pinzaStretch1_dMax = 0.060f;
+    public float pinzaStretch2_dMin = 0.020f;
+    public float pinzaStretch2_dMax = 0.040f;
+
     public GripperController pinzaController; // opzionale: script con proprietà MaxAngleDeg
 
     [Header("Semi-arco palline")]
@@ -262,46 +267,56 @@ public class ExperimentRT : MonoBehaviour
 #endif
     }
 
-    void ApplyConditionParameters(BlockPlan block)
-    {
-        if (block.modality == Modality.Hand)
-        {
-            // Nascondi XR Index
-            if (block.rig.indexHider) block.rig.indexHider.SetVisible(false);
+   void ApplyConditionParameters(BlockPlan block)
+{
+    // Prendiamo SEMPRE un PinchOpenDriver_Interaction dal rig corrente:
+    // - per la mano sarà quello già usato per il dito/indice
+    // - per la pinza sarà quello che guida il parametro Animator("Open")
+    var drv = block.rig.pinchDriver;
+    if (drv == null) drv = block.rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
 
-            var drv = block.rig.pinchDriver;
-            if (drv != null)
+    if (block.modality == Modality.Hand)
+    {
+        // Nascondi l’indice XR perché mostri il dito “masked”
+        if (block.rig.indexHider) block.rig.indexHider.SetVisible(false);
+
+        if (drv != null)
+        {
+            switch (block.stretch)
             {
-                switch (block.stretch)
-                {
-                    case Stretch.Baseline:
-                        TrySetDriverRange(drv, handBaseline_dMin, handBaseline_dMax);
-                        break;
-                    case Stretch.Stretch1:
-                        TrySetDriverRange(drv, handStretch1_dMin, handStretch1_dMax);
-                        break;
-                    case Stretch.Stretch2:
-                        TrySetDriverRange(drv, handStretch2_dMin, handStretch2_dMax);
-                        break;
-                }
+                default:
+                case Stretch.Baseline: TrySetDriverRange(drv, handBaseline_dMin, handBaseline_dMax); break;
+                case Stretch.Stretch1: TrySetDriverRange(drv, handStretch1_dMin, handStretch1_dMax); break;
+                case Stretch.Stretch2: TrySetDriverRange(drv, handStretch2_dMin, handStretch2_dMax); break;
             }
         }
-        else // Pinza
+        else
         {
-            // Riattiva XR Index (serve per calcolare la distanza dita → gripper)
-            if (block.rig.indexHider) block.rig.indexHider.SetVisible(true);
-
-            var gc = block.rig.gripperController;
-            if (gc != null)
-            {
-                gc.SetStretch(block.stretch); // 90 / 120 / 150 gradi
-            }
-            else
-            {
-                Debug.LogWarning("GripperController non assegnato in EffectorRig.");
-            }
+            Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig MANO.");
         }
     }
+    else // === PINZA ===
+    {
+        // Per la pinza ci serve l’indice XR visibile (serve la distanza reale delle dita)
+        if (block.rig.indexHider) block.rig.indexHider.SetVisible(true);
+
+        if (drv != null)
+        {
+            // Mappiamo i tre livelli su dMin/dMax della pinza (che guidano Animator 'Open')
+            switch (block.stretch)
+            {
+                default:
+                case Stretch.Baseline: TrySetDriverRange(drv, pinzaBaseline_dMin, pinzaBaseline_dMax); break;
+                case Stretch.Stretch1: TrySetDriverRange(drv, pinzaStretch1_dMin, pinzaStretch1_dMax); break;
+                case Stretch.Stretch2: TrySetDriverRange(drv, pinzaStretch2_dMin, pinzaStretch2_dMax); break;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig PINZA.");
+        }
+    }
+}
 
 
     void TrySetDriverRange(PinchOpenDriver_Interaction drv, float dMin, float dMax)

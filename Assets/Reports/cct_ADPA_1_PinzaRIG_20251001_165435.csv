@@ -1,0 +1,3 @@
+CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)
+ADPA,1,1,PinzaRIG,1,Async_indice,NA,NA
+ADPA,1,1,PinzaRIG,1,Sync_indice,NA,NA
