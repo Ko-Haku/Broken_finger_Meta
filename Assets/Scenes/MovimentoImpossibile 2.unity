@@ -1556,7 +1556,7 @@ Transform:
   m_GameObject: {fileID: 18234588}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7052824, y: 0.13506855, z: 0.03796437, w: 0.69490427}
-  m_LocalPosition: {x: -0.000368, y: -0.000107, z: -0.001578}
+  m_LocalPosition: {x: -0.000335, y: -0.000107, z: -0.001446}
   m_LocalScale: {x: 0.0009010218, y: 0.0012869294, z: 0.0010308592}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51252,7 +51252,7 @@ MonoBehaviour:
   indice: {fileID: 275347971}
   misura_pollice: {fileID: 561137046}
   misura_indice: {fileID: 275347973}
-  numeroTrials: 1
+  numeroTrials: 10
   seedSync: 40
   seedAsync: 40
   itiSeconds: 3
@@ -81313,7 +81313,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1570462155
 Transform:
   m_ObjectHideFlags: 0
@@ -81368,9 +81368,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6538611871744468c2b22b6d9b710e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Codice_Soggetto: ADPA
+  Codice_Soggetto: EDME
   Condizione: 1
-  NumeroSoggetto: 1
+  NumeroSoggetto: 2
 --- !u!114 &1570462158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81387,7 +81387,7 @@ MonoBehaviour:
   handRig: {fileID: 1167302167}
   pinzaRig: {fileID: 982289299}
   trialsPerBlock: 5
-  handFirst: 0
+  handFirst: 1
   plan: []
   ballPrefab: {fileID: 299417612879446324, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
   feedbackText: {fileID: 557403579}
@@ -81400,15 +81400,15 @@ MonoBehaviour:
   handBaseline_dMin: 0.03
   handBaseline_dMax: 0.25
   handStretch1_dMin: 0.03
-  handStretch1_dMax: 0.18
+  handStretch1_dMax: 0.2
   handStretch2_dMin: 0.03
   handStretch2_dMax: 0.12
   pinzaBaseline_dMin: 0.03
   pinzaBaseline_dMax: 0.25
-  pinzaStretch1_dMin: 0.3
-  pinzaStretch1_dMax: 0.18
-  pinzaStretch2_dMin: 0.02
-  pinzaStretch2_dMax: 0.04
+  pinzaStretch1_dMin: 0.03
+  pinzaStretch1_dMax: 0.2
+  pinzaStretch2_dMin: 0.03
+  pinzaStretch2_dMax: 0.12
   pinzaController: {fileID: 733309607}
   ballsPerTrial: 10
   arcRadius: 0.1
@@ -81418,6 +81418,12 @@ MonoBehaviour:
   darkScreen: {fileID: 1325187072}
   darkScreenTime: 2
   cctStartDelay: 1
+  requireRAfterCCT: 1
+  continueKey: 114
+  showDarkDuringQuestionnaire: 0
+  questionnairePrompt: 'Questionario embodiment.
+
+    Premi R per continuare.'
   showFirstRigOnStart: 1
   forceDeactivateOtherRigs: 1
   pauseBeforeFirstCCT: 0

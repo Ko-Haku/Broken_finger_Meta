@@ -25,14 +25,14 @@ public class ExperimentRT : MonoBehaviour
     public bool autoPlan = true;
     public EffectorRig handRig;
     public EffectorRig pinzaRig;
-    public int trialsPerBlock = 5;     // # trial per blocco
-    public bool handFirst = true;      // ordine macro tra Hand e Pinza
+    public int trialsPerBlock = 12;     // # trial per blocco
+    public bool handFirst = true;       // ordine macro tra Hand e Pinza
 
     [Header("Piano sperimentale (in ordine)")]
-    public BlockPlan[] plan;           // se vuoi fissare un piano manuale, compila qui
+    public BlockPlan[] plan;            // se vuoi fissare un piano manuale, compila qui
 
     [Header("Prefab pallina (Burst)")]
-    public GameObject ballPrefab;      // prefab con collider isTrigger + BurstBall
+    public GameObject ballPrefab;       // prefab con collider isTrigger + BurstBall
 
     [Header("UI feedback")]
     public TextMeshProUGUI feedbackText;      // mostra “Bolle: X/10”
@@ -48,7 +48,6 @@ public class ExperimentRT : MonoBehaviour
     [Range(0,1)] public float pinchMax = 0.25f; // pinch = openAmount <= pinchMax
 
     [Header("Parametri Mano (PinchOpenDriver)")]
-    // Valori richiesti dal PI per le tre condizioni (manipoliamo dMin/dMax del driver)
     public float handBaseline_dMin = 0.002f;
     public float handBaseline_dMax = 0.200f;
     public float handStretch1_dMin = 0.020f;
@@ -57,7 +56,6 @@ public class ExperimentRT : MonoBehaviour
     public float handStretch2_dMax = 0.050f;
 
     // === Parametri Pinza (ANIMATOR via PinchOpenDriver_Interaction) ===
-// Usa la stessa logica della mano: dMin/dMax -> openAmount -> Animator("Open")
     [Header("Parametri Pinza (Animator driver)")]
     public float pinzaBaseline_dMin = 0.020f;
     public float pinzaBaseline_dMax = 0.080f;
@@ -66,7 +64,7 @@ public class ExperimentRT : MonoBehaviour
     public float pinzaStretch2_dMin = 0.020f;
     public float pinzaStretch2_dMax = 0.040f;
 
-    public GripperController pinzaController; // opzionale: script con proprietà MaxAngleDeg
+    public GripperController pinzaController; // opzionale: non più usato se vai via Animator
 
     [Header("Semi-arco palline")]
     public int ballsPerTrial = 10;
@@ -78,12 +76,13 @@ public class ExperimentRT : MonoBehaviour
     [Header("Dark screen / CCT")]
     public GameObject darkScreen;
     public float darkScreenTime = 2f;
-    public float cctStartDelay = 1f; 
+    public float cctStartDelay = 1f;
+
     [Header("Preview all’avvio")]
     public bool showFirstRigOnStart = true;
     public bool forceDeactivateOtherRigs = true;
     public float pauseBeforeFirstCCT = 0f;
-    private bool experimentRunning = false;   // <— NUOVO
+    private bool experimentRunning = false;   // guardia anti-doppio avvio
 
     // Dati soggetto
     private string codiceSoggetto = "NA", condizione = "NA", numeroSoggetto = "NA";
@@ -94,6 +93,22 @@ public class ExperimentRT : MonoBehaviour
     private int currentBlockIndex = -1, currentTrial;
     private int poppedThisTrial;
     private List<GameObject> spawnedBalls = new List<GameObject>();
+
+    // === Helpers ===
+    string ConditionLabel(BlockPlan b)
+    {
+        // es. "Hand_Baseline", "Pinza_Stretch2"
+        return $"{b.modality}_{b.stretch}";
+    }
+
+    IEnumerator WaitForQuestionnaireKey()
+    {
+        if (feedbackText) feedbackText.text = "Questionario: premi R per continuare";
+        yield return null; // debounce
+        while (!Input.GetKeyDown(KeyCode.R))
+            yield return null;
+        if (feedbackText) feedbackText.text = "";
+    }
 
     void Start()
     {
@@ -117,38 +132,32 @@ public class ExperimentRT : MonoBehaviour
 
         // preview primo rig
         if (showFirstRigOnStart && plan != null && plan.Length > 0 && plan[0].rig != null)
-            ActivateOnlyHybrid(plan[0].rig);
-
-        if (feedbackText) feedbackText.text = "Premi S per iniziare";
-        // preview primo rig
-        if (showFirstRigOnStart && plan != null && plan.Length > 0 && plan[0].rig != null)
         {
             ActivateOnlyHybrid(plan[0].rig);
-            // NEW: applica i parametri del primo blocco già in preview
-            ApplyConditionParameters(plan[0]);
+            ApplyConditionParameters(plan[0]); // parametri visibili già in preview
         }
-        if (darkScreen) darkScreen.SetActive(true);   // <— NUOVO
 
+        if (feedbackText) feedbackText.text = "Premi S per iniziare";
+
+        // dark all'avvio
+        if (darkScreen) darkScreen.SetActive(true);
     }
 
     void Update()
     {
-       
-            if (Input.GetKeyDown(KeyCode.S) && !experimentRunning)
-            {
-                if (darkScreen) darkScreen.SetActive(false); // 4) via darkscreen su start
-                experimentRunning = true;                    // 3) guardia anti-doppio avvio
-                StartCoroutine(RunExperiment());
-            }
+        if (Input.GetKeyDown(KeyCode.S) && !experimentRunning)
+        {
+            if (darkScreen) darkScreen.SetActive(false);
+            experimentRunning = true;
+            StartCoroutine(RunExperiment());
+        }
 
-            if (showOpenAmountOnUI && feedbackText)
-            {
-                var rig = GetActiveRig();
-                if (rig != null && rig.pinchDriver != null)
-                    feedbackText.text = $"OpenAmount: {rig.pinchDriver.openAmount:0.00}";
-            }
-        
-
+        if (showOpenAmountOnUI && feedbackText)
+        {
+            var rig = GetActiveRig();
+            if (rig != null && rig.pinchDriver != null)
+                feedbackText.text = $"OpenAmount: {rig.pinchDriver.openAmount:0.00}";
+        }
     }
 
     EffectorRig GetActiveRig()
@@ -186,8 +195,6 @@ public class ExperimentRT : MonoBehaviour
 
     IEnumerator RunExperiment()
     {
-        
-
         if (plan == null || plan.Length == 0)
         {
             Debug.LogWarning("RunExperiment: plan vuoto.");
@@ -203,8 +210,14 @@ public class ExperimentRT : MonoBehaviour
 
             if (pauseBeforeFirstCCT > 0f)
                 yield return new WaitForSeconds(pauseBeforeFirstCCT);
+
+            // PASSA CONDIZIONE AL CCT del primo blocco
+            if (firstRig.cctTask != null) firstRig.cctTask.SetCondition(ConditionLabel(plan[0]));
+
             ApplyConditionParameters(plan[0]);
             yield return StartCoroutine(RunCCT(firstRig));
+            // Pausa questionario
+            yield return StartCoroutine(WaitForQuestionnaireKey());
         }
 
         // Loop blocchi
@@ -227,13 +240,13 @@ public class ExperimentRT : MonoBehaviour
                 if (feedbackText) feedbackText.text = "READY";
                 yield return new WaitForSeconds(readyTime);
 
-                // Spawn 10 palline in semiarco
+                // Spawn palline in semiarco
                 SpawnBallsArc(block.rig);
 
                 poppedThisTrial = 0;
                 UpdateFeedback();
 
-                // finestra temporale per “scoppiare quante più palline”
+                // finestra temporale
                 sw.Restart();
                 float t = 0f;
                 while (t < trialDuration)
@@ -245,15 +258,18 @@ public class ExperimentRT : MonoBehaviour
 
                 // cleanup
                 CleanupBalls();
-                if (feedbackText) UpdateFeedback(); // mostra punteggio finale del trial
+                if (feedbackText) UpdateFeedback();
                 yield return new WaitForSeconds(interTrialInterval);
 
                 // log
                 LogRow(block, poppedThisTrial, trialDuration);
             }
 
-            // CCT post-blocco
+            // CCT post-blocco: passa CONDIZIONE e lancialo
+            if (block.rig.cctTask != null) block.rig.cctTask.SetCondition(ConditionLabel(block));
             yield return StartCoroutine(RunCCT(block.rig));
+            // Pausa questionario
+            yield return StartCoroutine(WaitForQuestionnaireKey());
 
             // spegni rig (ibrido)
             ShowRigHybrid(block.rig, false);
@@ -267,69 +283,63 @@ public class ExperimentRT : MonoBehaviour
 #endif
     }
 
-   void ApplyConditionParameters(BlockPlan block)
-{
-    // Prendiamo SEMPRE un PinchOpenDriver_Interaction dal rig corrente:
-    // - per la mano sarà quello già usato per il dito/indice
-    // - per la pinza sarà quello che guida il parametro Animator("Open")
-    var drv = block.rig.pinchDriver;
-    if (drv == null) drv = block.rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
-
-    if (block.modality == Modality.Hand)
+    void ApplyConditionParameters(BlockPlan block)
     {
-        // Nascondi l’indice XR perché mostri il dito “masked”
-        if (block.rig.indexHider) block.rig.indexHider.SetVisible(false);
+        // Prendiamo SEMPRE un PinchOpenDriver_Interaction dal rig corrente:
+        var drv = block.rig.pinchDriver;
+        if (drv == null) drv = block.rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
 
-        if (drv != null)
+        if (block.modality == Modality.Hand)
         {
-            switch (block.stretch)
+            // Nascondi l’indice XR perché mostri il dito “masked”
+            if (block.rig.indexHider) block.rig.indexHider.SetVisible(false);
+
+            if (drv != null)
             {
-                default:
-                case Stretch.Baseline: TrySetDriverRange(drv, handBaseline_dMin, handBaseline_dMax); break;
-                case Stretch.Stretch1: TrySetDriverRange(drv, handStretch1_dMin, handStretch1_dMax); break;
-                case Stretch.Stretch2: TrySetDriverRange(drv, handStretch2_dMin, handStretch2_dMax); break;
+                switch (block.stretch)
+                {
+                    default:
+                    case Stretch.Baseline: TrySetDriverRange(drv, handBaseline_dMin, handBaseline_dMax); break;
+                    case Stretch.Stretch1: TrySetDriverRange(drv, handStretch1_dMin, handStretch1_dMax); break;
+                    case Stretch.Stretch2: TrySetDriverRange(drv, handStretch2_dMin, handStretch2_dMax); break;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig MANO.");
             }
         }
-        else
+        else // === PINZA ===
         {
-            Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig MANO.");
-        }
-    }
-    else // === PINZA ===
-    {
-        // Per la pinza ci serve l’indice XR visibile (serve la distanza reale delle dita)
-        if (block.rig.indexHider) block.rig.indexHider.SetVisible(true);
+            // Per la pinza ci serve l’indice XR visibile (serve la distanza reale delle dita)
+            if (block.rig.indexHider) block.rig.indexHider.SetVisible(true);
 
-        if (drv != null)
-        {
-            // Mappiamo i tre livelli su dMin/dMax della pinza (che guidano Animator 'Open')
-            switch (block.stretch)
+            if (drv != null)
             {
-                default:
-                case Stretch.Baseline: TrySetDriverRange(drv, pinzaBaseline_dMin, pinzaBaseline_dMax); break;
-                case Stretch.Stretch1: TrySetDriverRange(drv, pinzaStretch1_dMin, pinzaStretch1_dMax); break;
-                case Stretch.Stretch2: TrySetDriverRange(drv, pinzaStretch2_dMin, pinzaStretch2_dMax); break;
+                // Mappiamo i tre livelli su dMin/dMax della pinza (che guidano Animator 'Open')
+                switch (block.stretch)
+                {
+                    default:
+                    case Stretch.Baseline: TrySetDriverRange(drv, pinzaBaseline_dMin, pinzaBaseline_dMax); break;
+                    case Stretch.Stretch1: TrySetDriverRange(drv, pinzaStretch1_dMin, pinzaStretch1_dMax); break;
+                    case Stretch.Stretch2: TrySetDriverRange(drv, pinzaStretch2_dMin, pinzaStretch2_dMax); break;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig PINZA.");
             }
         }
-        else
-        {
-            Debug.LogWarning("ApplyConditionParameters: PinchOpenDriver_Interaction non trovato sul rig PINZA.");
-        }
     }
-}
-
 
     void TrySetDriverRange(PinchOpenDriver_Interaction drv, float dMin, float dMax)
     {
-        // Tenta di impostare dMin/dMax se esistono come campi pubblici
-        // (se i nomi nel tuo script sono diversi, rinominali qui)
         drv.dMin = dMin;
         drv.dMax = dMax;
     }
 
     IEnumerator WaitForPinch(EffectorRig rig)
     {
-        // partenza in pinch = openAmount <= pinchMax (timeout)
         float elapsed = 0f;
         if (rig.pinchDriver == null) yield break;
 
@@ -352,24 +362,19 @@ public class ExperimentRT : MonoBehaviour
             : (rig.fingerSpawnPoint ? rig.fingerSpawnPoint : rig.wrist);
         if (!anchor) { Debug.LogWarning("SpawnBallsArc: nessun anchor valido."); return; }
 
-        // Base nel frame della reference
         Vector3 up   = anchor.up;
         Vector3 back = (anchor.forward).normalized; // indietro
-        Vector3 down = (-up).normalized;             // verso il basso
+        Vector3 down = (-up).normalized;            // verso il basso
 
-        // Piano dell'arco: v1 = indietro (pallina #1), v2 = componente di "down" ortogonale a v1  (quindi GIÙ)
         Vector3 v1 = back;
-        Vector3 v2 = (down - Vector3.Dot(down, v1) * v1).normalized; // down-in-plane (non negare!)
-
-        // Centro tale che la 1ª pallina sia ESATTAMENTE sull’anchor
+        Vector3 v2 = (down - Vector3.Dot(down, v1) * v1).normalized; // down-in-plane
         Vector3 center = anchor.position + up * arcVerticalOffset - arcRadius * v1;
 
         float step = (ballsPerTrial > 1) ? (Mathf.Deg2Rad * arcSpanDeg / (ballsPerTrial - 1)) : 0f;
 
         for (int i = 0; i < ballsPerTrial; i++)
         {
-            // segno NEGATIVO → curva verso DESTRA (con v2 = down-in-plane)
-            float theta = -step * i;
+            float theta = -step * i; // negativo → verso destra
 
             Vector3 dir = (Mathf.Cos(theta) * v1 + Mathf.Sin(theta) * v2).normalized; // indietro → destra → giù
             Vector3 pos = center + dir * arcRadius;
@@ -382,9 +387,6 @@ public class ExperimentRT : MonoBehaviour
             spawnedBalls.Add(ball);
         }
     }
-
-
-
 
     void CleanupBalls()
     {
@@ -419,14 +421,12 @@ public class ExperimentRT : MonoBehaviour
         yield return new WaitForSeconds(darkScreenTime);
         if (darkScreen) darkScreen.SetActive(false);
 
-        // NUOVO: ritardo per evitare che il CCT parta "sotto" la dark
         if (cctStartDelay > 0f)
             yield return new WaitForSeconds(cctStartDelay);
 
         yield return StartCoroutine(rig.cctTask.StartMisura());
         SaveLog();
     }
-
 
     void LogRow(BlockPlan b, int ballsPopped, float durSec)
     {

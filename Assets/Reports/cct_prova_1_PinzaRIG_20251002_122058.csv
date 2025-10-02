@@ -1,0 +1,4 @@
+CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)
+prova,1,1,PinzaRIG,1,Sync_indice,NA,NA
+prova,1,1,PinzaRIG,1,Sync_medio,NA,NA
+prova,1,1,PinzaRIG,1,Sync_indice,NA,NA

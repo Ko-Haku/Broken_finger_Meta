@@ -23,8 +23,8 @@ public class CCT_Task : MonoBehaviour
 
     [Header("Inputs (test)")]
     public KeyCode startKey = KeyCode.Y;    // avvio manuale (debug)
-    public KeyCode respA = KeyCode.Mouse0;  // risposta "medio"
-    public KeyCode respB = KeyCode.Mouse1;  // risposta "indice"
+    public KeyCode respA = KeyCode.Mouse1;  // risposta "pollice"
+    public KeyCode respB = KeyCode.Mouse0;  // risposta "indice"
 
     [Header("Delays")]
     public float postResponseDelay = 1.0f;  // pausa DOPO la risposta prima del trial successivo
@@ -47,7 +47,7 @@ public class CCT_Task : MonoBehaviour
     private string risposta;
     private string Trial_type;
     private string nome;
-    private string cognome;
+    private string cognome;        // default da ParticipantInfo
     private string numeroSoggetto;
 
     // Stato risposta per questa trial
@@ -55,13 +55,19 @@ public class CCT_Task : MonoBehaviour
     private int remainingSync;
     private int remainingAsync;
 
+    [Header("Condition override (set by ExperimentRT)")]
+    public string overrideCondition = null; // es. "Hand_Baseline", "Pinza_Stretch1"...
+
+    // Chiamata da ExperimentRT per impostare la condizione corrente
+    public void SetCondition(string cond) => overrideCondition = cond;
+
     void Start()
     {
         zeit = new Stopwatch();
 
         var pi = ParticipantInfo.Instance;
-        nome = pi != null ? Safe(pi.Codice_Soggetto) : "NA";
-        cognome = pi != null ? Safe(pi.Condizione)   : "NA";
+        nome = pi != null ? Safe(pi.Codice_Soggetto)     : "NA";
+        cognome = pi != null ? Safe(pi.Condizione)       : "NA";
         numeroSoggetto = pi != null ? Safe(pi.NumeroSoggetto) : "NA";
 
         rigId = string.IsNullOrWhiteSpace(customRigId) ? Safe(gameObject.name) : Safe(customRigId);
@@ -72,7 +78,7 @@ public class CCT_Task : MonoBehaviour
         if (!Directory.Exists(directoryPath))
             Directory.CreateDirectory(directoryPath);
 
-        filePath = Path.Combine(directoryPath, $"cct_{nome}_{cognome}_{rigId}_{runStamp}.csv");
+        filePath = Path.Combine(directoryPath, $"cct_{nome}_{rigId}_{runStamp}.csv");
 
         // Header
         logData = new List<string>();
@@ -94,7 +100,7 @@ public class CCT_Task : MonoBehaviour
         if (attivo)
         {
             if (Input.GetKeyDown(respA))
-                MisuraTerminata("medio");
+                MisuraTerminata("pollice");
 
             if (Input.GetKeyDown(respB))
                 MisuraTerminata("indice");
@@ -137,7 +143,7 @@ public class CCT_Task : MonoBehaviour
         {
             current_Trial = i;
 
-            // Random: 0 = 'medio' come canale luce, 1 = 'indice'
+            // Random: 0 = 'pollice' come canale luce, 1 = 'indice'
             int latoLuce  = UnityEngine.Random.Range(0, 2);
             int syncAsync = UnityEngine.Random.Range(0, 2); // 0 preferisci async, 1 preferisci sync (con fallback)
 
@@ -147,18 +153,18 @@ public class CCT_Task : MonoBehaviour
             zeit.Reset();
 
             // Pianificazione stimolo
-            if (latoLuce == 0) // serie 'medio'
+            if (latoLuce == 0) // serie 'pollice'
             {
                 if ((syncAsync == 0 && remainingAsync > 0) || remainingSync == 0)
                 {
-                    Trial_type = "Async_medio";
+                    Trial_type = "Async_pollice";
                     remainingAsync--;
                     StartCoroutine(misura_pollice.accendispegni_luce());
                     StartCoroutine(misura_indice.accendispegni_haptic());
                 }
                 else
                 {
-                    Trial_type = "Sync_medio";
+                    Trial_type = "Sync_pollice";
                     remainingSync--;
                     StartCoroutine(misura_pollice.accendispegni_luce());
                     StartCoroutine(misura_pollice.accendispegni_haptic());
@@ -233,10 +239,17 @@ public class CCT_Task : MonoBehaviour
 
     // -- Logging helpers --
 
+    // Condizione effettiva: override da ExperimentRT se presente, altrimenti quella di ParticipantInfo
+    string EffectiveCondition()
+    {
+        return string.IsNullOrEmpty(overrideCondition) ? cognome : overrideCondition;
+    }
+
     void AppendRow(string ms)
     {
-        // Riga con colonna RigId
-        string row = $"{nome},{numeroSoggetto},{cognome},{rigId},{current_Trial + 1},{Trial_type},{risposta},{ms}";
+        string cond = EffectiveCondition();
+        // Riga con colonna Condizione aggiornata + RigId
+        string row = $"{nome},{numeroSoggetto},{cond},{rigId},{current_Trial + 1},{Trial_type},{risposta},{ms}";
         // Append sul file unico di questa run/rig
         File.AppendAllLines(filePath, new[] { row });
     }
