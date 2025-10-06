@@ -410,23 +410,86 @@ public class ExperimentRT : MonoBehaviour
         feedbackText.text = $"Bolle: {poppedThisTrial}/{ballsPerTrial}";
     }
 
-    IEnumerator RunCCT(EffectorRig rig)
+   // --- in ExperimentRT.cs ---
+
+// salva i parametri correnti del driver per poi ripristinarli
+struct DriverSnapshot {
+    public PinchOpenDriver_Interaction drv;
+    public float dMin, dMax;
+    public bool hasDriver;
+}
+
+DriverSnapshot ForceBaselineForCCT(EffectorRig rig)
+{
+    var snap = new DriverSnapshot { drv = null, hasDriver = false, dMin = 0f, dMax = 0f };
+    if (rig == null) return snap;
+
+    var drv = rig.pinchDriver;
+    if (drv == null) drv = rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
+    if (drv == null) return snap;
+
+    snap.drv = drv;
+    snap.hasDriver = true;
+    snap.dMin = drv.dMin;
+    snap.dMax = drv.dMax;
+
+    // baseline per Mano o Pinza
+    // (usiamo i campi baseline che hai già in ExperimentRT)
+    if (rig.rigType == EffectorRig.RigType.Hand)
     {
-        if (rig == null || rig.cctTask == null) yield break;
-
-        if (rig.rigType == EffectorRig.RigType.Hand)
-            rig.ShowBothHandVariants(true);
-
-        if (darkScreen) darkScreen.SetActive(true);
-        yield return new WaitForSeconds(darkScreenTime);
-        if (darkScreen) darkScreen.SetActive(false);
-
-        if (cctStartDelay > 0f)
-            yield return new WaitForSeconds(cctStartDelay);
-
-        yield return StartCoroutine(rig.cctTask.StartMisura());
-        SaveLog();
+        drv.dMin = handBaseline_dMin;
+        drv.dMax = handBaseline_dMax;
+        // per la mano, nascondi l’indice XR come fai nei blocchi mano
+        if (rig.indexHider) rig.indexHider.SetVisible(false);
     }
+    else // Pinza
+    {
+        drv.dMin = pinzaBaseline_dMin;
+        drv.dMax = pinzaBaseline_dMax;
+        // per la pinza, fai in modo che l’indice XR sia visibile (ti serve la distanza reale)
+        if (rig.indexHider) rig.indexHider.SetVisible(true);
+    }
+
+    return snap;
+}
+
+void RestoreAfterCCT(DriverSnapshot snap)
+{
+    if (!snap.hasDriver || snap.drv == null) return;
+    snap.drv.dMin = snap.dMin;
+    snap.drv.dMax = snap.dMax;
+}
+
+// SOSTITUISCI IL TUO RunCCT CON QUESTO:
+IEnumerator RunCCT(EffectorRig rig)
+{
+    if (rig == null || rig.cctTask == null) yield break;
+
+    // Forza temporaneamente la baseline per il CCT
+    var snap = ForceBaselineForCCT(rig);
+
+    // etichetta condizione nel file del CCT (es. "Hand_BaselineCCT")
+    string cctCond = (rig.rigType == EffectorRig.RigType.Hand) ? "Hand_BaselineCCT" : "Pinza_BaselineCCT";
+    rig.cctTask.SetCondition(cctCond);
+
+    if (rig.rigType == EffectorRig.RigType.Hand)
+        rig.ShowBothHandVariants(true);
+
+    if (darkScreen) darkScreen.SetActive(true);
+    yield return new WaitForSeconds(darkScreenTime);
+    if (darkScreen) darkScreen.SetActive(false);
+
+    if (cctStartDelay > 0f)
+        yield return new WaitForSeconds(cctStartDelay);
+
+    yield return StartCoroutine(rig.cctTask.StartMisura());
+
+    // Ripristina i parametri del driver dopo il CCT
+    RestoreAfterCCT(snap);
+
+    SaveLog();
+}
+
 
     void LogRow(BlockPlan b, int ballsPopped, float durSec)
     {

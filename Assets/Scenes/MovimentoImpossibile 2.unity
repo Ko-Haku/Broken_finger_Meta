@@ -14641,7 +14641,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_dx
-  parameterValue: 1
+  parameterValue: 0.9
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -17614,17 +17614,16 @@ MonoBehaviour:
   indice: {fileID: 1065972403}
   misura_pollice: {fileID: 1271615334}
   misura_indice: {fileID: 1065972404}
-  numeroTrials: 10
-  seedSync: 40
-  seedAsync: 40
+  countPerType: 10
   itiSeconds: 3
-  startKey: 121
-  respA: 323
-  respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  startKey: 121
+  respPollice: 324
+  respIndice: 323
   customRigId: 
   logData: []
+  overrideCondition: 
 --- !u!114 &346412692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28438,7 +28437,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_sx
-  parameterValue: 1
+  parameterValue: 0.9
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -51252,17 +51251,16 @@ MonoBehaviour:
   indice: {fileID: 275347971}
   misura_pollice: {fileID: 561137046}
   misura_indice: {fileID: 275347973}
-  numeroTrials: 10
-  seedSync: 40
-  seedAsync: 40
+  countPerType: 10
   itiSeconds: 3
-  startKey: 121
-  respA: 323
-  respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  startKey: 121
+  respPollice: 324
+  respIndice: 323
   customRigId: PinzaRIG
   logData: []
+  overrideCondition: 
 --- !u!114 &982289299
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -80922,7 +80920,7 @@ Transform:
   m_GameObject: {fileID: 1557281028}
   serializedVersion: 2
   m_LocalRotation: {x: -0.65440947, y: -0.0698709, z: -0.6594448, w: -0.36331636}
-  m_LocalPosition: {x: 0.0128, y: 0.0002, z: -0.0049}
+  m_LocalPosition: {x: 0.01217, y: 0.00039, z: -0.00494}
   m_LocalScale: {x: 0.006, y: 0.006, z: 0.006}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -80944,7 +80942,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_sx
-  parameterValue: 1
+  parameterValue: 0.9
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -81345,17 +81343,16 @@ MonoBehaviour:
   indice: {fileID: 1885057817}
   misura_pollice: {fileID: 0}
   misura_indice: {fileID: 0}
-  numeroTrials: 10
-  seedSync: 40
-  seedAsync: 40
+  countPerType: 10
   itiSeconds: 3
-  startKey: 121
-  respA: 323
-  respB: 324
   postResponseDelay: 1
   preStartDelay: 1
+  startKey: 121
+  respPollice: 324
+  respIndice: 323
   customRigId: ManoRig
   logData: []
+  overrideCondition: 
 --- !u!114 &1570462157
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81386,8 +81383,8 @@ MonoBehaviour:
   autoPlan: 1
   handRig: {fileID: 1167302167}
   pinzaRig: {fileID: 982289299}
-  trialsPerBlock: 5
-  handFirst: 1
+  trialsPerBlock: 12
+  handFirst: 0
   plan: []
   ballPrefab: {fileID: 299417612879446324, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
   feedbackText: {fileID: 557403579}
@@ -81418,12 +81415,6 @@ MonoBehaviour:
   darkScreen: {fileID: 1325187072}
   darkScreenTime: 2
   cctStartDelay: 1
-  requireRAfterCCT: 1
-  continueKey: 114
-  showDarkDuringQuestionnaire: 0
-  questionnairePrompt: 'Questionario embodiment.
-
-    Premi R per continuare.'
   showFirstRigOnStart: 1
   forceDeactivateOtherRigs: 1
   pauseBeforeFirstCCT: 0
@@ -98024,7 +98015,7 @@ Transform:
   m_GameObject: {fileID: 1885057817}
   serializedVersion: 2
   m_LocalRotation: {x: 0.53280723, y: -0.23618634, z: -0.81219995, w: 0.025763325}
-  m_LocalPosition: {x: 0.0056, y: -0.0103, z: 0.0005}
+  m_LocalPosition: {x: 0.006, y: -0.00926, z: -0.00006}
   m_LocalScale: {x: 0.006, y: 0.006, z: 0.006}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -98046,7 +98037,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_dx
-  parameterValue: 1
+  parameterValue: 0.9
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
