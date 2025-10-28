@@ -14641,7 +14641,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_dx
-  parameterValue: 0.9
+  parameterValue: 1
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -17614,15 +17614,16 @@ MonoBehaviour:
   indice: {fileID: 1065972403}
   misura_pollice: {fileID: 1271615334}
   misura_indice: {fileID: 1065972404}
-  countPerType: 10
-  itiSeconds: 3
-  postResponseDelay: 1
+  countPerType: 5
+  trialWindowSec: 3
   preStartDelay: 1
+  postResponseDelay: 1
   startKey: 121
   respPollice: 324
   respIndice: 323
+  maxSameInRow: 2
+  randomSeed: -1
   customRigId: 
-  logData: []
   overrideCondition: 
 --- !u!114 &346412692
 MonoBehaviour:
@@ -28437,7 +28438,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_sx
-  parameterValue: 0.9
+  parameterValue: 1
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -51251,15 +51252,16 @@ MonoBehaviour:
   indice: {fileID: 275347971}
   misura_pollice: {fileID: 561137046}
   misura_indice: {fileID: 275347973}
-  countPerType: 10
-  itiSeconds: 3
-  postResponseDelay: 1
+  countPerType: 5
+  trialWindowSec: 3
   preStartDelay: 1
+  postResponseDelay: 1
   startKey: 121
   respPollice: 324
   respIndice: 323
+  maxSameInRow: 2
+  randomSeed: -1
   customRigId: PinzaRIG
-  logData: []
   overrideCondition: 
 --- !u!114 &982289299
 MonoBehaviour:
@@ -60298,8 +60300,8 @@ MonoBehaviour:
   hand: {fileID: 1167302162}
   modifier: {fileID: 1167302163}
   gripperAnimator: {fileID: 949869278}
-  dMin: 0.02
-  dMax: 0.08
+  dMin: 0.03
+  dMax: 0.25
   smooth: 0.2
   openAmount: 0
 --- !u!114 &1167302165
@@ -80920,7 +80922,7 @@ Transform:
   m_GameObject: {fileID: 1557281028}
   serializedVersion: 2
   m_LocalRotation: {x: -0.65440947, y: -0.0698709, z: -0.6594448, w: -0.36331636}
-  m_LocalPosition: {x: 0.01217, y: 0.00039, z: -0.00494}
+  m_LocalPosition: {x: 0.0114, y: 0.00012, z: -0.00463}
   m_LocalScale: {x: 0.006, y: 0.006, z: 0.006}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -80942,7 +80944,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_sx
-  parameterValue: 0.9
+  parameterValue: 1
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -81343,15 +81345,16 @@ MonoBehaviour:
   indice: {fileID: 1885057817}
   misura_pollice: {fileID: 0}
   misura_indice: {fileID: 0}
-  countPerType: 10
-  itiSeconds: 3
-  postResponseDelay: 1
+  countPerType: 5
+  trialWindowSec: 3
   preStartDelay: 1
+  postResponseDelay: 1
   startKey: 121
   respPollice: 324
   respIndice: 323
+  maxSameInRow: 2
+  randomSeed: -1
   customRigId: ManoRig
-  logData: []
   overrideCondition: 
 --- !u!114 &1570462157
 MonoBehaviour:
@@ -81365,9 +81368,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6538611871744468c2b22b6d9b710e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Codice_Soggetto: EDME
+  Codice_Soggetto: PROVA
   Condizione: 1
-  NumeroSoggetto: 2
+  NumeroSoggetto: 00001
 --- !u!114 &1570462158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81384,7 +81387,7 @@ MonoBehaviour:
   handRig: {fileID: 1167302167}
   pinzaRig: {fileID: 982289299}
   trialsPerBlock: 12
-  handFirst: 0
+  handFirst: 1
   plan: []
   ballPrefab: {fileID: 299417612879446324, guid: 4161106df732ef344a45ebef2dfe9fe6, type: 3}
   feedbackText: {fileID: 557403579}
@@ -81395,15 +81398,15 @@ MonoBehaviour:
   startPoseTimeoutSec: 6
   pinchMax: 0.25
   handBaseline_dMin: 0.03
-  handBaseline_dMax: 0.25
+  handBaseline_dMax: 0.22
   handStretch1_dMin: 0.03
-  handStretch1_dMax: 0.2
+  handStretch1_dMax: 0.165
   handStretch2_dMin: 0.03
   handStretch2_dMax: 0.12
   pinzaBaseline_dMin: 0.03
-  pinzaBaseline_dMax: 0.25
+  pinzaBaseline_dMax: 0.245
   pinzaStretch1_dMin: 0.03
-  pinzaStretch1_dMax: 0.2
+  pinzaStretch1_dMax: 0.175
   pinzaStretch2_dMin: 0.03
   pinzaStretch2_dMax: 0.12
   pinzaController: {fileID: 733309607}
@@ -81418,6 +81421,7 @@ MonoBehaviour:
   showFirstRigOnStart: 1
   forceDeactivateOtherRigs: 1
   pauseBeforeFirstCCT: 0
+  postQuestionnaireDarkSec: 1
 --- !u!1 &1571567288
 GameObject:
   m_ObjectHideFlags: 0
@@ -94495,13 +94499,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1806890776}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000002712766, y: 0.38268316, z: 0.9238797, w: 0.0000006121113}
-  m_LocalPosition: {x: 0.0003, y: -0.0234, z: 0.0511}
+  m_LocalRotation: {x: 0, y: 0.3420201, z: 0.9396927, w: 0}
+  m_LocalPosition: {x: 0, y: -0.001, z: 0.045}
   m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 416858832}
-  m_LocalEulerAnglesHint: {x: -45, y: 0, z: 180}
+  m_LocalEulerAnglesHint: {x: -40, y: 0, z: 180}
 --- !u!135 &1806890778
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -98037,7 +98041,7 @@ MonoBehaviour:
   spento: {fileID: 2100000, guid: 2b864968ad03fc3418c6999dff29aece, type: 2}
   stopped: 0
   fmodEvent: event:/Vibra_increase_dx
-  parameterValue: 0.9
+  parameterValue: 1
   collisionTag: []
   minCollisionVolume: 0.1
   maxCollisionVelocity: 5
@@ -104051,8 +104055,8 @@ MonoBehaviour:
   hand: {fileID: 1167302162}
   modifier: {fileID: 0}
   gripperAnimator: {fileID: 2005631382}
-  dMin: 0.02
-  dMax: 0.08
+  dMin: 0.03
+  dMax: 0.225
   smooth: 0.2
   openAmount: 0
 --- !u!1 &2005690848

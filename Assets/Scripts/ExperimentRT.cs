@@ -84,6 +84,10 @@ public class ExperimentRT : MonoBehaviour
     public float pauseBeforeFirstCCT = 0f;
     private bool experimentRunning = false;   // guardia anti-doppio avvio
 
+    [Header("Questionario / Inter-blocco")]
+    [Tooltip("Mostra la dark screen tra il questionario del blocco N e il burst del blocco N+1 (copre il cambio parametri).")]
+    public float postQuestionnaireDarkSec = 1.0f;
+   // public float blackoutAfterQuestionnaire = 1f;
     // Dati soggetto
     private string codiceSoggetto = "NA", condizione = "NA", numeroSoggetto = "NA";
 
@@ -95,11 +99,7 @@ public class ExperimentRT : MonoBehaviour
     private List<GameObject> spawnedBalls = new List<GameObject>();
 
     // === Helpers ===
-    string ConditionLabel(BlockPlan b)
-    {
-        // es. "Hand_Baseline", "Pinza_Stretch2"
-        return $"{b.modality}_{b.stretch}";
-    }
+    string ConditionLabel(BlockPlan b) => $"{b.modality}_{b.stretch}";
 
     IEnumerator WaitForQuestionnaireKey()
     {
@@ -192,96 +192,152 @@ public class ExperimentRT : MonoBehaviour
             ShowRigHybrid(b.rig, b.rig == rigToShow);
         }
     }
-
-    IEnumerator RunExperiment()
+// 1) helper in ExperimentRT
+    IEnumerator Blackout(float seconds)
     {
-        if (plan == null || plan.Length == 0)
-        {
-            Debug.LogWarning("RunExperiment: plan vuoto.");
-            yield break;
-        }
-
-        // CCT baseline UNA VOLTA all’inizio (sul primo rig)
-        var firstRig = plan[0].rig;
-        if (firstRig != null)
-        {
-            if (forceDeactivateOtherRigs) ActivateOnlyHybrid(firstRig);
-            else ShowRigHybrid(firstRig, true);
-
-            if (pauseBeforeFirstCCT > 0f)
-                yield return new WaitForSeconds(pauseBeforeFirstCCT);
-
-            // PASSA CONDIZIONE AL CCT del primo blocco
-            if (firstRig.cctTask != null) firstRig.cctTask.SetCondition(ConditionLabel(plan[0]));
-
-            ApplyConditionParameters(plan[0]);
-            yield return StartCoroutine(RunCCT(firstRig));
-            // Pausa questionario
-            yield return StartCoroutine(WaitForQuestionnaireKey());
-        }
-
-        // Loop blocchi
-        for (currentBlockIndex = 0; currentBlockIndex < plan.Length; currentBlockIndex++)
-        {
-            var block = plan[currentBlockIndex];
-            if (block.rig == null) continue;
-
-            if (forceDeactivateOtherRigs) ActivateOnlyHybrid(block.rig);
-            else ShowRigHybrid(block.rig, true);
-
-            // Applica parametri di condizione (mano/pinza)
-            ApplyConditionParameters(block);
-
-            // Trial loop
-            for (currentTrial = 0; currentTrial < Mathf.Max(1, block.trials); currentTrial++)
-            {
-                // Gating: partenza in PINCH
-                yield return StartCoroutine(WaitForPinch(block.rig));
-                if (feedbackText) feedbackText.text = "READY";
-                yield return new WaitForSeconds(readyTime);
-
-                // Spawn palline in semiarco
-                SpawnBallsArc(block.rig);
-
-                poppedThisTrial = 0;
-                UpdateFeedback();
-
-                // finestra temporale
-                sw.Restart();
-                float t = 0f;
-                while (t < trialDuration)
-                {
-                    t += Time.deltaTime;
-                    yield return null;
-                }
-                sw.Stop();
-
-                // cleanup
-                CleanupBalls();
-                if (feedbackText) UpdateFeedback();
-                yield return new WaitForSeconds(interTrialInterval);
-
-                // log
-                LogRow(block, poppedThisTrial, trialDuration);
-            }
-
-            // CCT post-blocco: passa CONDIZIONE e lancialo
-            if (block.rig.cctTask != null) block.rig.cctTask.SetCondition(ConditionLabel(block));
-            yield return StartCoroutine(RunCCT(block.rig));
-            // Pausa questionario
-            yield return StartCoroutine(WaitForQuestionnaireKey());
-
-            // spegni rig (ibrido)
-            ShowRigHybrid(block.rig, false);
-            SaveLog();
-        }
-
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        if (!darkScreen || seconds <= 0f) yield break;
+        darkScreen.SetActive(true);
+        yield return new WaitForSeconds(seconds);
+        darkScreen.SetActive(false);
     }
+
+   IEnumerator RunExperiment()
+   {
+       if (plan == null || plan.Length == 0)
+       {
+           Debug.LogWarning("RunExperiment: plan vuoto.");
+           yield break;
+       }
+   
+       // Disattiva tutti i rig all’inizio
+       if (forceDeactivateOtherRigs)
+           foreach (var b in plan) if (b.rig) ShowRigHybrid(b.rig, false);
+   
+       // ===== CCT BASELINE INIZIALE (sul primo rig) =====
+       var firstBlock = plan[0];
+       var firstRig   = firstBlock.rig;
+       if (firstRig != null)
+       {
+           // mostra SOLO il primo rig
+           if (forceDeactivateOtherRigs) ActivateOnlyHybrid(firstRig);
+           else ShowRigHybrid(firstRig, true);
+   
+           // etichetta condizione nel CCT (es. "Hand_Baseline_CCT_Initial" / "Pinza_Baseline_CCT_Initial")
+           if (firstRig.cctTask != null)
+               firstRig.cctTask.SetCondition($"{firstBlock.modality}_{firstBlock.stretch}_CCT_Initial");
+   
+           // Applica parametri visivi della condizione corrente
+           ApplyConditionParameters(firstBlock);
+   
+           // Lancia CCT (RunCCT forza temporaneamente la baseline dei parametri, come da tua logica)
+           yield return StartCoroutine(RunCCT(firstRig));
+   
+           // Questionario
+           yield return StartCoroutine(WaitForQuestionnaireKey());
+           // dopo il questionario, SEMPRE un blackout breve prima del burst del blocco successivo
+           yield return StartCoroutine(Blackout(postQuestionnaireDarkSec));
+
+   
+          
+       }
+   
+       // ===== LOOP BLOCCHI =====
+       for (currentBlockIndex = 0; currentBlockIndex < plan.Length; currentBlockIndex++)
+       {
+           var block = plan[currentBlockIndex];
+           if (block.rig == null) continue;
+   
+           // mostra SOLO il rig del blocco
+           if (forceDeactivateOtherRigs) ActivateOnlyHybrid(block.rig);
+           else ShowRigHybrid(block.rig, true);
+   
+           // Se stiamo entrando in una NUOVA MODALITÀ visiva rispetto al blocco precedente,
+           // fai un CCT baseline PRIMA di partire col burst di questo blocco.
+           bool modalityChanged = false;
+           if (currentBlockIndex > 0)
+           {
+               var prev = plan[currentBlockIndex - 1];
+               modalityChanged = (prev.modality != block.modality);
+           }
+   
+           if (modalityChanged)
+           {
+               // etichetta per chiarezza nel file CCT
+               if (block.rig.cctTask != null)
+                   block.rig.cctTask.SetCondition($"{block.modality}_{block.stretch}_CCT_PreSwitch");
+   
+               // assesta i parametri visivi per questa condizione
+               ApplyConditionParameters(block);
+   
+               // CCT baseline prima del nuovo tipo di visual
+               yield return StartCoroutine(RunCCT(block.rig));
+   
+               // Questionario
+               yield return StartCoroutine(WaitForQuestionnaireKey());
+   
+               // Blackout breve per evitare di far vedere lo switch dei parametri
+               yield return StartCoroutine(Blackout(postQuestionnaireDarkSec));
+           }
+           else
+           {
+               // comunque assesta i parametri visivi della condizione (se non li hai già assestati sopra)
+               ApplyConditionParameters(block);
+           }
+   
+           // ===== TRIALS (BURST) =====
+           for (currentTrial = 0; currentTrial < Mathf.Max(1, block.trials); currentTrial++)
+           {
+               // Gating: partenza in pinch
+               yield return StartCoroutine(WaitForPinch(block.rig));
+               if (feedbackText) feedbackText.text = "READY";
+               yield return new WaitForSeconds(readyTime);
+   
+               // Spawn palline in semiarco
+               SpawnBallsArc(block.rig);
+   
+               poppedThisTrial = 0;
+               UpdateFeedback();
+   
+               // finestra temporale
+               sw.Restart();
+               float t = 0f;
+               while (t < trialDuration)
+               {
+                   t += Time.deltaTime;
+                   yield return null;
+               }
+               sw.Stop();
+   
+               // cleanup
+               CleanupBalls();
+               if (feedbackText) UpdateFeedback();
+               yield return new WaitForSeconds(interTrialInterval);
+   
+               // log
+               LogRow(block, poppedThisTrial, trialDuration);
+           }
+   
+           // ===== CCT POST-BLOCCO (come prima) =====
+           if (block.rig.cctTask != null)
+               block.rig.cctTask.SetCondition($"{block.modality}_{block.stretch}_CCT_Post");
+   
+           yield return StartCoroutine(RunCCT(block.rig));
+   
+           // Questionario
+           yield return StartCoroutine(WaitForQuestionnaireKey());
+           yield return StartCoroutine(Blackout(postQuestionnaireDarkSec));
+           // spegni rig finito
+           ShowRigHybrid(block.rig, false);
+           SaveLog();
+       }
+   
+   #if UNITY_EDITOR
+       UnityEditor.EditorApplication.isPlaying = false;
+   #else
+       Application.Quit();
+   #endif
+   }
+
 
     void ApplyConditionParameters(BlockPlan block)
     {
@@ -410,86 +466,96 @@ public class ExperimentRT : MonoBehaviour
         feedbackText.text = $"Bolle: {poppedThisTrial}/{ballsPerTrial}";
     }
 
-   // --- in ExperimentRT.cs ---
-
-// salva i parametri correnti del driver per poi ripristinarli
-struct DriverSnapshot {
-    public PinchOpenDriver_Interaction drv;
-    public float dMin, dMax;
-    public bool hasDriver;
-}
-
-DriverSnapshot ForceBaselineForCCT(EffectorRig rig)
-{
-    var snap = new DriverSnapshot { drv = null, hasDriver = false, dMin = 0f, dMax = 0f };
-    if (rig == null) return snap;
-
-    var drv = rig.pinchDriver;
-    if (drv == null) drv = rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
-    if (drv == null) return snap;
-
-    snap.drv = drv;
-    snap.hasDriver = true;
-    snap.dMin = drv.dMin;
-    snap.dMax = drv.dMax;
-
-    // baseline per Mano o Pinza
-    // (usiamo i campi baseline che hai già in ExperimentRT)
-    if (rig.rigType == EffectorRig.RigType.Hand)
-    {
-        drv.dMin = handBaseline_dMin;
-        drv.dMax = handBaseline_dMax;
-        // per la mano, nascondi l’indice XR come fai nei blocchi mano
-        if (rig.indexHider) rig.indexHider.SetVisible(false);
-    }
-    else // Pinza
-    {
-        drv.dMin = pinzaBaseline_dMin;
-        drv.dMax = pinzaBaseline_dMax;
-        // per la pinza, fai in modo che l’indice XR sia visibile (ti serve la distanza reale)
-        if (rig.indexHider) rig.indexHider.SetVisible(true);
+    // --- Snapshot driver per CCT baseline ---
+    struct DriverSnapshot {
+        public PinchOpenDriver_Interaction drv;
+        public float dMin, dMax;
+        public bool hasDriver;
     }
 
-    return snap;
-}
+    DriverSnapshot ForceBaselineForCCT(EffectorRig rig)
+    {
+        var snap = new DriverSnapshot { drv = null, hasDriver = false, dMin = 0f, dMax = 0f };
+        if (rig == null) return snap;
 
-void RestoreAfterCCT(DriverSnapshot snap)
-{
-    if (!snap.hasDriver || snap.drv == null) return;
-    snap.drv.dMin = snap.dMin;
-    snap.drv.dMax = snap.dMax;
-}
+        var drv = rig.pinchDriver;
+        if (drv == null) drv = rig.GetComponentInChildren<PinchOpenDriver_Interaction>(true);
+        if (drv == null) return snap;
 
-// SOSTITUISCI IL TUO RunCCT CON QUESTO:
-IEnumerator RunCCT(EffectorRig rig)
-{
-    if (rig == null || rig.cctTask == null) yield break;
+        snap.drv = drv;
+        snap.hasDriver = true;
+        snap.dMin = drv.dMin;
+        snap.dMax = drv.dMax;
 
-    // Forza temporaneamente la baseline per il CCT
-    var snap = ForceBaselineForCCT(rig);
+        // baseline per Mano o Pinza
+        if (rig.rigType == EffectorRig.RigType.Hand)
+        {
+            drv.dMin = handBaseline_dMin;
+            drv.dMax = handBaseline_dMax;
+            if (rig.indexHider) rig.indexHider.SetVisible(false);
+        }
+        else // Pinza
+        {
+            drv.dMin = pinzaBaseline_dMin;
+            drv.dMax = pinzaBaseline_dMax;
+            if (rig.indexHider) rig.indexHider.SetVisible(true);
+        }
 
-    // etichetta condizione nel file del CCT (es. "Hand_BaselineCCT")
-    string cctCond = (rig.rigType == EffectorRig.RigType.Hand) ? "Hand_BaselineCCT" : "Pinza_BaselineCCT";
-    rig.cctTask.SetCondition(cctCond);
+        return snap;
+    }
 
-    if (rig.rigType == EffectorRig.RigType.Hand)
-        rig.ShowBothHandVariants(true);
+    void RestoreAfterCCT(DriverSnapshot snap)
+    {
+        if (!snap.hasDriver || snap.drv == null) return;
+        snap.drv.dMin = snap.dMin;
+        snap.drv.dMax = snap.dMax;
+    }
 
-    if (darkScreen) darkScreen.SetActive(true);
-    yield return new WaitForSeconds(darkScreenTime);
-    if (darkScreen) darkScreen.SetActive(false);
+    IEnumerator RunCCT(EffectorRig rig)
+    {
+        if (rig == null || rig.cctTask == null) yield break;
 
-    if (cctStartDelay > 0f)
-        yield return new WaitForSeconds(cctStartDelay);
+        // Forza temporaneamente la baseline per il CCT
+        var snap = ForceBaselineForCCT(rig);
 
-    yield return StartCoroutine(rig.cctTask.StartMisura());
+        // etichetta condizione nel file del CCT (es. "Hand_BaselineCCT" / "Pinza_BaselineCCT")
+       // string cctCond = (rig.rigType == EffectorRig.RigType.Hand) ? "Hand_BaselineCCT" : "Pinza_BaselineCCT";
+        string cctCond;
+		// Se siamo dentro un blocco valido, usa la condizione di provenienza
+	if (currentBlockIndex >= 0 && plan != null && currentBlockIndex < plan.Length)
+		{		
+   			 var b = plan[currentBlockIndex];
+   			 cctCond = $"{b.modality}_{b.stretch}_CCT";
+		}
+	else
+		{
+    			// Altrimenti (CCT iniziale pre-esperimento)
+   			 cctCond = (rig.rigType == EffectorRig.RigType.Hand)
+      		  ? "Hand_BaselineCCT"
+       		 : "Pinza_BaselineCCT";
+		}
 
-    // Ripristina i parametri del driver dopo il CCT
-    RestoreAfterCCT(snap);
 
-    SaveLog();
-}
 
+		rig.cctTask.SetCondition(cctCond);
+
+        if (rig.rigType == EffectorRig.RigType.Hand)
+            rig.ShowBothHandVariants(true);
+
+        if (darkScreen) darkScreen.SetActive(true);
+        yield return new WaitForSeconds(darkScreenTime);
+        if (darkScreen) darkScreen.SetActive(false);
+
+        if (cctStartDelay > 0f)
+            yield return new WaitForSeconds(cctStartDelay);
+
+        yield return StartCoroutine(rig.cctTask.StartMisura());
+
+        // Ripristina i parametri del driver dopo il CCT
+        RestoreAfterCCT(snap);
+
+        SaveLog();
+    }
 
     void LogRow(BlockPlan b, int ballsPopped, float durSec)
     {
