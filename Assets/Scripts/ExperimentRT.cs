@@ -28,6 +28,10 @@ public class ExperimentRT : MonoBehaviour
     public int trialsPerBlock = 12;     // # trial per blocco
     public bool handFirst = true;       // ordine macro tra Hand e Pinza
 
+    [Header("Modalità Task")]
+    [Tooltip("Se false, non vengono spawnate le bolle (condizione di controllo senza compito motorio).")]
+    public bool taskEnabled = true;
+
     [Header("Piano sperimentale (in ordine)")]
     public BlockPlan[] plan;            // se vuoi fissare un piano manuale, compila qui
 
@@ -75,7 +79,7 @@ public class ExperimentRT : MonoBehaviour
 
     [Header("Dark screen / CCT")]
     public GameObject darkScreen;
-    public float darkScreenTime = 2f;
+    public float darkScreenTime = 1f;
     public float cctStartDelay = 1f;
 
     [Header("Preview all’avvio")]
@@ -103,7 +107,7 @@ public class ExperimentRT : MonoBehaviour
 
     IEnumerator WaitForQuestionnaireKey()
     {
-        if (feedbackText) feedbackText.text = "Questionario: premi R per continuare";
+        if (feedbackText) feedbackText.text = "Questionario(R)";
         yield return null; // debounce
         while (!Input.GetKeyDown(KeyCode.R))
             yield return null;
@@ -137,7 +141,7 @@ public class ExperimentRT : MonoBehaviour
             ApplyConditionParameters(plan[0]); // parametri visibili già in preview
         }
 
-        if (feedbackText) feedbackText.text = "Premi S per iniziare";
+        if (feedbackText) feedbackText.text = "Premi S ";
 
         // dark all'avvio
         if (darkScreen) darkScreen.SetActive(true);
@@ -192,7 +196,8 @@ public class ExperimentRT : MonoBehaviour
             ShowRigHybrid(b.rig, b.rig == rigToShow);
         }
     }
-// 1) helper in ExperimentRT
+
+    // 1) helper in ExperimentRT
     IEnumerator Blackout(float seconds)
     {
         if (!darkScreen || seconds <= 0f) yield break;
@@ -228,7 +233,6 @@ public class ExperimentRT : MonoBehaviour
    
            // Applica parametri visivi della condizione corrente
            ApplyConditionParameters(firstBlock);
-   
            // Lancia CCT (RunCCT forza temporaneamente la baseline dei parametri, come da tua logica)
            yield return StartCoroutine(RunCCT(firstRig));
    
@@ -236,9 +240,8 @@ public class ExperimentRT : MonoBehaviour
            yield return StartCoroutine(WaitForQuestionnaireKey());
            // dopo il questionario, SEMPRE un blackout breve prima del burst del blocco successivo
            yield return StartCoroutine(Blackout(postQuestionnaireDarkSec));
-
    
-          
+   
        }
    
        // ===== LOOP BLOCCHI =====
@@ -262,27 +265,30 @@ public class ExperimentRT : MonoBehaviour
    
            if (modalityChanged)
            {
-               // etichetta per chiarezza nel file CCT
+               // Cambio di modalità → faccio il CCT prima del nuovo blocco
                if (block.rig.cctTask != null)
                    block.rig.cctTask.SetCondition($"{block.modality}_{block.stretch}_CCT_PreSwitch");
    
-               // assesta i parametri visivi per questa condizione
-               ApplyConditionParameters(block);
-   
-               // CCT baseline prima del nuovo tipo di visual
                yield return StartCoroutine(RunCCT(block.rig));
-   
-               // Questionario
-               yield return StartCoroutine(WaitForQuestionnaireKey());
-   
-               // Blackout breve per evitare di far vedere lo switch dei parametri
-               yield return StartCoroutine(Blackout(postQuestionnaireDarkSec));
            }
-           else
-           {
-               // comunque assesta i parametri visivi della condizione (se non li hai già assestati sopra)
-               ApplyConditionParameters(block);
-           }
+   
+// --- QUI SEMPRE, indipendentemente dal cambio di modalità ---
+   
+// 1) Attendo che la persona finisca il questionario
+           yield return StartCoroutine(WaitForQuestionnaireKey());
+   
+// 2) Accendo la darkscreen (NON applico ancora i parametri)
+           if (darkScreen) darkScreen.SetActive(true);
+   
+// 3) Ora che lo schermo è nero → posso cambiare i parametri senza che si vedano
+           ApplyConditionParameters(block);
+   
+// 4) attendo il tempo di blackout
+           yield return new WaitForSeconds(postQuestionnaireDarkSec);
+   
+// 5) Spengo la darkscreen
+           if (darkScreen) darkScreen.SetActive(false);
+   
    
            // ===== TRIALS (BURST) =====
            for (currentTrial = 0; currentTrial < Mathf.Max(1, block.trials); currentTrial++)
@@ -337,8 +343,8 @@ public class ExperimentRT : MonoBehaviour
        Application.Quit();
    #endif
    }
-
-
+    
+    
     void ApplyConditionParameters(BlockPlan block)
     {
         // Prendiamo SEMPRE un PinchOpenDriver_Interaction dal rig corrente:
@@ -390,6 +396,7 @@ public class ExperimentRT : MonoBehaviour
 
     void TrySetDriverRange(PinchOpenDriver_Interaction drv, float dMin, float dMax)
     {
+        if (drv == null) return;
         drv.dMin = dMin;
         drv.dMax = dMax;
     }
@@ -409,7 +416,16 @@ public class ExperimentRT : MonoBehaviour
 
     void SpawnBallsArc(EffectorRig rig)
     {
+        // cleanup palline residue
         CleanupBalls();
+
+        // se il task è disattivato, non spawnare nulla e assicurati che trialActive sia false
+        if (!taskEnabled)
+        {
+            // non spawnare palline e non mostrare feedback
+            return;
+        }
+
         if (!ballPrefab) { Debug.LogWarning("ballPrefab non assegnato."); return; }
         if (!rig) { Debug.LogWarning("SpawnBallsArc: rig nullo."); return; }
 
@@ -455,14 +471,16 @@ public class ExperimentRT : MonoBehaviour
 
     public void OnBallPopped(GameObject ball)
     {
-        poppedThisTrial++;
+        if (taskEnabled)
+            poppedThisTrial++;
+
         if (ball) { spawnedBalls.Remove(ball); Destroy(ball); }
         UpdateFeedback();
     }
 
     void UpdateFeedback()
     {
-        if (!feedbackText) return;
+        if (!feedbackText || !taskEnabled) return;
         feedbackText.text = $"Bolle: {poppedThisTrial}/{ballsPerTrial}";
     }
 
@@ -487,18 +505,19 @@ public class ExperimentRT : MonoBehaviour
         snap.dMin = drv.dMin;
         snap.dMax = drv.dMax;
 
-        // baseline per Mano o Pinza
+        // Nota: non tocchiamo indexHider qui per evitare di dover
+        // leggere/ristorare stati interni non esposti.
+
+        // baseline per Mano o Pinza (solo dMin/dMax)
         if (rig.rigType == EffectorRig.RigType.Hand)
         {
             drv.dMin = handBaseline_dMin;
             drv.dMax = handBaseline_dMax;
-            if (rig.indexHider) rig.indexHider.SetVisible(false);
         }
         else // Pinza
         {
             drv.dMin = pinzaBaseline_dMin;
             drv.dMax = pinzaBaseline_dMax;
-            if (rig.indexHider) rig.indexHider.SetVisible(true);
         }
 
         return snap;
@@ -515,46 +534,66 @@ public class ExperimentRT : MonoBehaviour
     {
         if (rig == null || rig.cctTask == null) yield break;
 
-        // Forza temporaneamente la baseline per il CCT
+        // Forza temporaneamente la baseline per il CCT (salva snapshot dei driver)
         var snap = ForceBaselineForCCT(rig);
 
         // etichetta condizione nel file del CCT (es. "Hand_BaselineCCT" / "Pinza_BaselineCCT")
-       // string cctCond = (rig.rigType == EffectorRig.RigType.Hand) ? "Hand_BaselineCCT" : "Pinza_BaselineCCT";
         string cctCond;
-		// Se siamo dentro un blocco valido, usa la condizione di provenienza
-	if (currentBlockIndex >= 0 && plan != null && currentBlockIndex < plan.Length)
-		{		
-   			 var b = plan[currentBlockIndex];
-   			 cctCond = $"{b.modality}_{b.stretch}_CCT";
-		}
-	else
-		{
-    			// Altrimenti (CCT iniziale pre-esperimento)
-   			 cctCond = (rig.rigType == EffectorRig.RigType.Hand)
-      		  ? "Hand_BaselineCCT"
-       		 : "Pinza_BaselineCCT";
-		}
+        if (currentBlockIndex >= 0 && plan != null && currentBlockIndex < plan.Length)
+        {
+            var b = plan[currentBlockIndex];
+            cctCond = $"{b.modality}_{b.stretch}_CCT";
+        }
+        else
+        {
+            cctCond = (rig.rigType == EffectorRig.RigType.Hand)
+              ? "Hand_BaselineCCT"
+              : "Pinza_BaselineCCT";
+        }
 
-
-
-		rig.cctTask.SetCondition(cctCond);
+        rig.cctTask.SetCondition(cctCond);
 
         if (rig.rigType == EffectorRig.RigType.Hand)
             rig.ShowBothHandVariants(true);
 
+        // Imposta visibilità indexHider coerente per il CCT (prima di attivare il darkscreen)
+        if (rig.indexHider != null)
+        {
+            if (rig.rigType == EffectorRig.RigType.Hand) rig.indexHider.SetVisible(false);
+            else rig.indexHider.SetVisible(true);
+        }
+
+        // show darkscreen per mascherare eventuali cambi di stato
         if (darkScreen) darkScreen.SetActive(true);
         yield return new WaitForSeconds(darkScreenTime);
+
+        // togli darkscreen per eseguire il CCT (se il CCT deve essere visibile)
         if (darkScreen) darkScreen.SetActive(false);
 
         if (cctStartDelay > 0f)
             yield return new WaitForSeconds(cctStartDelay);
 
+        // esegui il CCT (visibile)
         yield return StartCoroutine(rig.cctTask.StartMisura());
 
-        // Ripristina i parametri del driver dopo il CCT
+        // --- RIATTIVA darkscreen SUBITO DOPO IL CCT per nascondere il restore ---
+        if (darkScreen) darkScreen.SetActive(true);
+        // attendi un frame per assicurarti che la darkScreen sia effettivamente attiva
+        yield return null;
+
+        // Ripristina i parametri del driver mentre il partecipante è schermato
         RestoreAfterCCT(snap);
 
+        // Ri-applica i parametri della condizione corrente (utile per riallineare indexHider e range)
+        if (currentBlockIndex >= 0 && plan != null && currentBlockIndex < plan.Length)
+        {
+            ApplyConditionParameters(plan[currentBlockIndex]);
+        }
+
         SaveLog();
+
+        // poi togli la dark screen e procedi
+        if (darkScreen) darkScreen.SetActive(false);
     }
 
     void LogRow(BlockPlan b, int ballsPopped, float durSec)

@@ -1,0 +1,5 @@
+CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)
+SIVA,17,Pinza_Stretch2_CCT,PinzaRIG,1,AsyncIndice,NA,NA
+SIVA,17,Pinza_Stretch2_CCT,PinzaRIG,2,AsyncIndice,NA,NA
+SIVA,17,Pinza_Stretch2_CCT,PinzaRIG,3,AsyncPollice,NA,NA
+SIVA,17,Pinza_Stretch2_CCT,PinzaRIG,4,SyncIndice,NA,NA
