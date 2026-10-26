@@ -1,0 +1,8 @@
+CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)
+PAMA,22,Hand_Stretch1_CCT,ManoRig,1,AsyncIndice,NA,NA
+PAMA,22,Hand_Stretch1_CCT,ManoRig,2,SyncPollice,NA,NA
+PAMA,22,Hand_Stretch1_CCT,ManoRig,3,SyncPollice,NA,NA
+PAMA,22,Hand_Stretch1_CCT,ManoRig,4,SyncIndice,pollice,632
+PAMA,22,Hand_Stretch1_CCT,ManoRig,5,AsyncPollice,pollice,210
+PAMA,22,Hand_Stretch1_CCT,ManoRig,6,AsyncIndice,NA,NA
+PAMA,22,Hand_Stretch1_CCT,ManoRig,7,AsyncPollice,NA,NA

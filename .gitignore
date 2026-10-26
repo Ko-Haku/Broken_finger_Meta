@@ -7,7 +7,8 @@
 [Ll]ogs/
 [Mm]emoryCaptures/
 Artifacts/
-UserSettings/        # spesso meglio ignorare settaggi locali
+# settaggi locali dell'editor
+UserSettings/
 
 # Autogenerati IDE
 *.csproj
@@ -26,3 +27,9 @@ UserSettings/        # spesso meglio ignorare settaggi locali
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Blender: i .blend si rigenerano con Blender/costruisci_*.py;
+# le sorgenti sono dump di asset di terze parti (zip originali sul desktop)
+Blender/sorgenti/
+Blender/*.blend
+Blender/*.blend1

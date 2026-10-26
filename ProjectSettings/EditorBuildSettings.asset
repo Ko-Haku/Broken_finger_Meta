@@ -6,25 +6,25 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scene/SampleScene.unity
+    path: Assets/Scenes/Vecchie/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scene/Eco_1.unity
+    path: Assets/Scenes/Vecchie/Eco_1.unity
     guid: 1181287c74fda444c938b58187c5e89a
   - enabled: 1
-    path: Assets/Scene/Eco_2.unity
+    path: Assets/Scenes/Vecchie/Eco_2.unity
     guid: 5ed66ab5a3c7e59479d180e46e19fbf1
   - enabled: 1
-    path: Assets/Scene/Eco_3.unity
+    path: Assets/Scenes/Vecchie/Eco_3.unity
     guid: dd683938b87c580449a7d5b6618c4ade
   - enabled: 1
-    path: Assets/Scene/Bisection.unity
+    path: Assets/Scenes/Vecchie/Bisection.unity
     guid: c36ba3885acd7b74ba3e5f0973eaa09e
   - enabled: 1
-    path: Assets/Scene/Questionario - embodiment.unity
+    path: Assets/Scenes/Vecchie/Questionario - embodiment.unity
     guid: b069de8a3b6963742be90e1cd2a2d5c9
   - enabled: 1
-    path: Assets/Scene/Reachability.unity
+    path: Assets/Scenes/Vecchie/Reachability.unity
     guid: 235116af54d4a5f45bacd160a8709369
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 4ca839862f7b1754b942dd294368f36d, type: 2}

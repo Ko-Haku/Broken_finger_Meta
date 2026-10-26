@@ -123046,9 +123046,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c6538611871744468c2b22b6d9b710e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Codice_Soggetto: SIVA
-  Condizione: No_Task
-  NumeroSoggetto: 17
+  Codice_Soggetto: ANLE
+  Condizione: NoTask
+  NumeroSoggetto: 20
 --- !u!114 &1570462158
 MonoBehaviour:
   m_ObjectHideFlags: 0
