@@ -10,6 +10,9 @@ public class TB_Lampadina : MonoBehaviour
     public Renderer filamento;
     public Renderer vetro;                   // opzionale: bagliore leggero del bulbo
     public Light luce;
+    [Tooltip("Intensità della luce accesa. Spenta = 1/10000 di questa: la luce resta abilitata così il costo " +
+             "di rendering e le varianti di shader delle ombre non cambiano nel frame critico dell'accensione")]
+    public float intensitaLuce = 1f;
     [ColorUsage(false, true)] public Color emissioneFilamento = new Color(1f, 0.55f, 0.18f) * 12f;
     [ColorUsage(false, true)] public Color emissioneVetro = new Color(1f, 0.7f, 0.4f) * 0.35f;
     public AudioSource suonoAccensione;
@@ -30,6 +33,7 @@ public class TB_Lampadina : MonoBehaviour
         if (filamento) { matFilamento = filamento.material; matFilamento.EnableKeyword("_EMISSION"); }
         if (vetro) { matVetro = vetro.material; matVetro.EnableKeyword("_EMISSION"); }
         if (tasto) posTastoRiposo = tasto.localPosition;
+        if (luce) luce.enabled = true;
         Spegni();
     }
 
@@ -53,7 +57,8 @@ public class TB_Lampadina : MonoBehaviour
     {
         if (tProgrammato < 0 || Accesa) return;
         double now = Time.realtimeSinceStartupAsDouble;
-        double halfFrame = Time.unscaledDeltaTime * 0.5;
+        // intervallo nominale, non l'ultimo deltaTime: un frame perso non deve spostare la soglia
+        double halfFrame = (TB_Timing.Instance ? TB_Timing.Instance.Intervallo : Time.unscaledDeltaTime) * 0.5;
         if (now + halfFrame >= tProgrammato)
         {
             Accendi();
@@ -67,7 +72,7 @@ public class TB_Lampadina : MonoBehaviour
         Accesa = true;
         if (matFilamento) matFilamento.SetColor("_EmissionColor", emissioneFilamento);
         if (matVetro) matVetro.SetColor("_EmissionColor", emissioneVetro);
-        if (luce) luce.enabled = true;
+        if (luce) luce.intensity = intensitaLuce;
     }
 
     public void Spegni()
@@ -77,7 +82,7 @@ public class TB_Lampadina : MonoBehaviour
         if (suonoAccensione && suonoAccensione.isPlaying) suonoAccensione.Stop();
         if (matFilamento) matFilamento.SetColor("_EmissionColor", Color.black);
         if (matVetro) matVetro.SetColor("_EmissionColor", Color.black);
-        if (luce) luce.enabled = false;
+        if (luce) luce.intensity = intensitaLuce * 1e-4f;
     }
 
     // Prova in editor: tasto destro sul componente

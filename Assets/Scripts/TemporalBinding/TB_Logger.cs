@@ -21,7 +21,7 @@ public class TB_Logger : MonoBehaviour
         File.WriteAllText(filePath,
             "Soggetto,Numero,OrdineBlocchi,Blocco,Condizione,Effettore,Agency,Trial,Warmup," +
             "DelayNominale_ms,DelayEffettivo_ms,Stima_ms,SliderStart,RT_risposta_ms,Latenza_azione_ms," +
-            "MovimentoManoReale_mm,ClipPassivo,FrameRate,Timestamp\n");
+            "MovimentoManoReale_mm,ClipPassivo,FrameRate,Refresh_Hz,FramePersi,Ripetizione,Timestamp\n");
         soggettoId = soggetto; numeroId = numero; ordine = ordineBlocchi;
     }
 
@@ -42,6 +42,8 @@ public class TB_Logger : MonoBehaviour
             t.movimentoManoRealeMm.ToString("F1", Inv),
             t.clipIndex,
             (1f / Mathf.Max(1e-4f, Time.smoothDeltaTime)).ToString("F0", Inv),
+            (TB_Timing.Instance ? TB_Timing.Instance.FrequenzaHz : 0f).ToString("F1", Inv),
+            t.framePersi, t.ripetizione,
             DateTime.Now.ToString("HH:mm:ss.fff"));
         File.AppendAllText(filePath, riga + "\n");
     }

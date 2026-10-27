@@ -43,6 +43,8 @@ public class TB_Trial
     public int sliderStart;
     public float movimentoManoRealeMm; // solo passivo/esterno: quanto si è mossa la mano reale
     public int clipIndex = -1;          // clip cinematica usata nel passivo
+    public int framePersi;              // frame saltati tra il primo evento e la luce (compreso il frame dell'evento)
+    public int ripetizione;             // 0 = prima esecuzione; >0 = ripetuto per frame persi
 
     public double DelayEffettivoMs => (tLuce - tEvento) * 1000.0;
     public double LatenzaAzioneMs => (tEvento - tFixOff) * 1000.0;

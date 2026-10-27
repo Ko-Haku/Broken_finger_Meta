@@ -1,19 +1,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Riproduce sul fantoccio (mano o mano+pinzetta) le clip registrate con TB_RegistratoreClip.
-// L'istante di chiusura di ogni clip è trovato automaticamente: il primo istante in cui
-// le due punte (pollice/indice o ganasce della pinzetta) scendono sotto la soglia.
-// Il manager fa partire la clip in modo che la chiusura cada alla latenza voluta.
+// Riproduce sull'avatar le clip registrate con TB_RegistratoreClip (condizione passiva).
+// 'fantoccio' è la radice registrata (la spalla destra dell'avatar): durante il replay la clip
+// sovrascrive, dopo VRIK, retargeting e torsione, tutte le ossa del braccio e il tool, mentre la mano
+// reale resta ferma a riposo. Per questo gira per ultimo (ordine 32500).
+// L'istante di chiusura di ogni clip è l'evento "TB_Chiusura" scritto dal registratore
+// (la chiusura rilevata dal TB_PinchSensor durante la registrazione); in mancanza, la distanza
+// tra due punte (puntaA/puntaB) che scende sotto soglia.
+[DefaultExecutionOrder(32500)]
 public class TB_Cinematica : MonoBehaviour
 {
-    [Tooltip("Radice del fantoccio: stessa gerarchia dell'oggetto registrato")]
+    public const string EventoChiusura = "TB_Chiusura";
+
+    [Tooltip("Radice registrata: stessa gerarchia dell'oggetto su cui girava TB_RegistratoreClip")]
     public GameObject fantoccio;
     public AnimationClip[] clips;
+    [Tooltip("In editor, se 'clips' è vuoto, carica le clip di Registrazioni che iniziano con questo prefisso")]
+    public string prefissoClip = "";
 
-    [Header("Rilevamento chiusura nella clip")]
-    public Transform puntaA;                // es. punta del pollice / ganascia 1 del fantoccio
-    public Transform puntaB;                // es. punta dell'indice / ganascia 2
+    [Header("Rilevamento chiusura senza evento (fallback)")]
+    public Transform puntaA;
+    public Transform puntaB;
     public float sogliaChiusura = 0.015f;   // metri
     public float passoCampionamento = 1f / 240f;
 
@@ -22,11 +30,29 @@ public class TB_Cinematica : MonoBehaviour
     AnimationClip clipPreparata;
     AnimationClip clipInCorso;
     double tInizio;
+    bool inPosa;
 
     public double TempoAllaChiusura => clipPreparata != null ? tChiusuraCache[clipPreparata] : 0;
     public bool InRiproduzione => clipInCorso != null;
 
-    // Sceglie una clip a caso e mette il fantoccio nella posa iniziale. Ritorna l'indice (-1 se nessuna).
+    void Awake()
+    {
+#if UNITY_EDITOR
+        if ((clips == null || clips.Length == 0) && !string.IsNullOrEmpty(prefissoClip))
+        {
+            var lista = new List<AnimationClip>();
+            foreach (var g in UnityEditor.AssetDatabase.FindAssets($"{prefissoClip} t:AnimationClip", new[] { TB_RegistratoreClip.Cartella }))
+            {
+                var c = UnityEditor.AssetDatabase.LoadAssetAtPath<AnimationClip>(UnityEditor.AssetDatabase.GUIDToAssetPath(g));
+                if (c && c.name.StartsWith(prefissoClip)) lista.Add(c);
+            }
+            clips = lista.ToArray();
+            if (clips.Length > 0) Debug.Log($"[TB] {name}: caricate {clips.Length} clip '{prefissoClip}*'");
+        }
+#endif
+    }
+
+    // Sceglie una clip a caso e mette l'avatar nella posa iniziale. Ritorna l'indice (-1 se nessuna).
     public int Prepara()
     {
         clipInCorso = null;
@@ -35,7 +61,7 @@ public class TB_Cinematica : MonoBehaviour
         clipPreparata = clips[i];
         if (!tChiusuraCache.ContainsKey(clipPreparata))
             tChiusuraCache[clipPreparata] = TrovaChiusura(clipPreparata);
-        clipPreparata.SampleAnimation(fantoccio, 0f);
+        inPosa = true;                      // tiene la posa iniziale finché non parte il replay
         return i;
     }
 
@@ -46,20 +72,27 @@ public class TB_Cinematica : MonoBehaviour
         tInizio = Time.realtimeSinceStartupAsDouble;
     }
 
-    public void Ferma() { clipInCorso = null; }
+    public void Ferma() { clipInCorso = null; inPosa = false; }
 
     void LateUpdate()
     {
-        if (clipInCorso == null) return;
-        float t = (float)(Time.realtimeSinceStartupAsDouble - tInizio);
-        clipInCorso.SampleAnimation(fantoccio, Mathf.Min(t, clipInCorso.length));
+        if (clipInCorso != null)
+        {
+            float t = (float)(Time.realtimeSinceStartupAsDouble - tInizio);
+            clipInCorso.SampleAnimation(fantoccio, Mathf.Min(t, clipInCorso.length));
+        }
+        else if (inPosa && clipPreparata != null)
+            clipPreparata.SampleAnimation(fantoccio, 0f);
     }
 
     float TrovaChiusura(AnimationClip clip)
     {
+        foreach (var e in clip.events)
+            if (e.functionName == EventoChiusura) return e.time;
+
         if (puntaA == null || puntaB == null)
         {
-            Debug.LogWarning($"[TB] Punte non assegnate su {name}: chiusura assunta a metà clip");
+            Debug.LogWarning($"[TB] {clip.name}: nessun evento di chiusura e punte non assegnate, chiusura assunta a metà clip");
             return clip.length * 0.5f;
         }
         for (float t = 0f; t <= clip.length; t += passoCampionamento)
