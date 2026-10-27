@@ -17,7 +17,7 @@ using UnityEngine.UI;
 // Batch: Unity.exe -batchmode -quit -projectPath ... -executeMethod TB_MontaEsperimento.Esegui
 public static class TB_MontaEsperimento
 {
-    const string Scena = "Assets/Scenes/TemporalBinding_Pilota.unity";
+    const string Scena = "Assets/Scenes/TemporalBinding/TemporalBinding_Pilota.unity";
     const string FbxPistone = "Assets/MODELS/TemporalBinding/Postazione_TB/Pistone.fbx";
     const string ProfiloBloom = "Assets/MODELS/TemporalBinding/Postazione_TB/Bloom_TB.asset";
 

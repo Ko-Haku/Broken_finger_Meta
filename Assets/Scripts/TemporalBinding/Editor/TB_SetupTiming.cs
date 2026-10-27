@@ -12,8 +12,8 @@ public static class TB_SetupTiming
 {
     static readonly string[] Scene =
     {
-        "Assets/Scenes/TemporalBinding_Pilota.unity",
-        "Assets/Scenes/TB_NuoviStrumenti.unity",
+        "Assets/Scenes/TemporalBinding/TemporalBinding_Pilota.unity",
+        "Assets/Scenes/TemporalBinding/TB_NuoviStrumenti.unity",
     };
 
     [MenuItem("Tools/Temporal Binding/Setup timing e resoconto rendering")]

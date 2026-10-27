@@ -57357,6 +57357,7 @@ MonoBehaviour:
   filamento: {fileID: 105430114}
   vetro: {fileID: 105430113}
   luce: {fileID: 258900025}
+  intensitaLuce: 1
   emissioneFilamento: {r: 12, g: 6.6000004, b: 2.16, a: 12}
   emissioneVetro: {r: 0.35, g: 0.24499999, b: 0.14, a: 0.35}
   suonoAccensione: {fileID: 105430115}
