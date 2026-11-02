@@ -39,6 +39,8 @@ public class TB_ExperimentManager : MonoBehaviour
     public float durataLuce = 1f;
     public Vector2 iti = new Vector2(0.5f, 1f);
     public float timeoutAzione = 8f;
+    [Tooltip("Passivo: secondi prima della chiusura della clip in cui il tasto comincia a scendere con le dita")]
+    public float durataCompressionePassiva = 0.08f;
     [Tooltip("Trial con frame persi tra azione e luce ripetuti al massimo per blocco")]
     public int maxRipetizioniPerBlocco = 10;
     [Tooltip("Se non ci sono ancora latenze attive registrate")]
@@ -55,18 +57,80 @@ public class TB_ExperimentManager : MonoBehaviour
     };
 
     bool inCorso;
+    bool sessioneFinita;                    // dopo "Fine. Grazie!" la schermata iniziale non lo sovrascrive
 
     void Start()
     {
         PreparaScena(TB_Condizione.Tutte[0]);
         if (mirino) mirino.SetActive(false);
-        Testo("Premi X per iniziare");
+        Testo(TestoAvvio(out _));
     }
 
     void Update()
     {
-        if (!inCorso && (Input.GetKeyDown(tastoAvvio) || TB_Input.XGiu))
+        if (inCorso) return;
+        // prova di un singolo blocco (niente log, niente dati soggetto): 1-5 = condizioni in TB_Condizione.Tutte
+        for (int k = 0; k < TB_Condizione.Tutte.Length; k++)
+            if (Input.GetKeyDown(KeyCode.Alpha1 + k) || Input.GetKeyDown(KeyCode.Keypad1 + k))
+            {
+                StartCoroutine(Prova(TB_Condizione.Tutte[k]));
+                return;
+            }
+        // codice e numero si possono compilare anche in Play: la schermata iniziale si aggiorna
+        string msg = TestoAvvio(out bool valido);
+        if (!sessioneFinita && istruzioni && istruzioni.text != msg) Testo(msg);
+        if (valido && Avanti())
             StartCoroutine(Sessione());
+    }
+
+    // avvio e pause: X sul controller sinistro, oppure S / X / Invio da tastiera
+    bool Avanti() => TB_Input.XGiu || Input.GetKeyDown(tastoAvvio) || Input.GetKeyDown(KeyCode.X) ||
+                     Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+
+    // Numero soggetto -> sequenza di Williams (controbilanciamento dei blocchi) e ordine della familiarizzazione
+    static bool LeggiSoggetto(out string codice, out int numero)
+    {
+        var pi = ParticipantInfo.Instance;
+        codice = pi.Codice_Soggetto == null ? "" : pi.Codice_Soggetto.Trim();
+        numero = 0;
+        return codice.Length > 0 && int.TryParse((pi.NumeroSoggetto ?? "").Trim(), out numero) && numero >= 1;
+    }
+
+    public static int Sequenza(int numero) => (numero - 1) % (2 * TB_Condizione.Tutte.Length) + 1;
+
+    // dispari: prima la mano; pari: prima la pinzetta
+    public static TB_Effettore[] OrdineFamiliarizzazione(int numero) =>
+        numero % 2 == 1 ? new[] { TB_Effettore.Mano, TB_Effettore.Tool } : new[] { TB_Effettore.Tool, TB_Effettore.Mano };
+
+    string TestoAvvio(out bool valido)
+    {
+        const string prova = "\n\nProva di un blocco (tastiera): 1 Mano attivo, 2 Mano passivo,\n3 Pinzetta attivo, 4 Pinzetta passivo, 5 Esterno";
+        valido = LeggiSoggetto(out string codice, out int n);
+        if (!valido)
+            return "Compila Codice_Soggetto e NumeroSoggetto (intero da 1)\nnel componente ParticipantInfo, poi premi X" + prova;
+        return $"Soggetto {codice} (n. {n}) - sequenza {Sequenza(n)}/{2 * TB_Condizione.Tutte.Length}\n" +
+               string.Join(" > ", OrdineWilliams(n).Select(c => c.Nome)) + "\n\nPremi X per iniziare" + prova;
+    }
+
+    [Header("Prova (tasti 1-5 fuori sessione)")]
+    public int trialProva = 6;
+    bool inProva;
+
+    // Blocco di prova di una condizione: stessi trial veri ma non scritti nel log
+    IEnumerator Prova(TB_Condizione cond)
+    {
+        inCorso = true; inProva = true; sessioneFinita = false;
+        if (swap) swap.enabled = false;
+        Debug.Log($"[TB] Prova del blocco {cond.Nome}: {trialProva} trial, non salvati");
+        yield return Pausa($"PROVA: {cond.Nome}\n{TestoBlocco(cond, 1, 1)}\n\nPremi X", cond);
+        for (int i = 0; i < trialProva; i++)
+        {
+            var t = new TB_Trial { blocco = 0, indice = i, warmup = true, condizione = cond,
+                                   delayNominaleMs = delaysMs[i % delaysMs.Length] };
+            yield return EseguiTrial(t);
+        }
+        if (swap) swap.enabled = true;
+        inCorso = false; inProva = false;    // torna la schermata iniziale
     }
 
     // ---------------- sessione ----------------
@@ -75,17 +139,17 @@ public class TB_ExperimentManager : MonoBehaviour
     {
         inCorso = true;
         if (swap) swap.enabled = false;       // durante la sessione l'avatar lo sceglie il manager
-        var pi = ParticipantInfo.Instance;
-        string soggetto = string.IsNullOrWhiteSpace(pi.Codice_Soggetto) ? "NA" : pi.Codice_Soggetto.Trim();
-        string numero = string.IsNullOrWhiteSpace(pi.NumeroSoggetto) ? "0" : pi.NumeroSoggetto.Trim();
-        int.TryParse(numero, out int n);
+        LeggiSoggetto(out string soggetto, out int n);
+        string numero = n.ToString();
 
         var ordine = OrdineWilliams(n);
         logger.Apri(soggetto, numero, string.Join("-", ordine.Select(c => c.Nome)));
+        Debug.Log($"[TB] Sessione: soggetto {soggetto} n. {n}, sequenza Williams {Sequenza(n)}: {string.Join(" > ", ordine.Select(c => c.Nome))}; " +
+                  $"familiarizzazione {string.Join(" > ", OrdineFamiliarizzazione(n))}");
 
         if (!saltaFamiliarizzazione)
         {
-            foreach (var eff in new[] { TB_Effettore.Mano, TB_Effettore.Tool })
+            foreach (var eff in OrdineFamiliarizzazione(n))
             {
                 var cond = new TB_Condizione(eff, TB_Agency.Attivo);
                 yield return Pausa($"Familiarizzazione: {(eff == TB_Effettore.Mano ? "MANO" : "PINZETTA")}\n" +
@@ -124,6 +188,7 @@ public class TB_ExperimentManager : MonoBehaviour
         }
 
         Testo("Fine. Grazie!");
+        sessioneFinita = true;
         if (swap) swap.enabled = true;
         inCorso = false;
     }
@@ -168,9 +233,22 @@ public class TB_ExperimentManager : MonoBehaviour
             Testo("Apri pollice e indice attorno al pulsante");
             yield return new WaitUntil(() => sensore.Pronta);
         }
+        else if (passivo)
+        {
+            // la clip muove solo le dita: la mano (vera) deve essere già sul pulsante, aperta e ferma
+            // pronta quando la mano è vicina al tasto e le dita non stringono; il pannello dice cosa manca
+            const string invito = "Metti la mano aperta attorno al pulsante e lasciala ferma: le dita si muoveranno da sole";
+            while (!sensore.ProntaPassivo)
+            {
+                Testo(invito + (!sensore.Tracciata ? "\n(mano non vista)" : !sensore.ManoAlTasto ? "\n(avvicina la mano al pulsante)" : "\n(apri un po' le dita)"));
+                yield return null;
+            }
+            Testo(invito);
+            yield return new WaitForSecondsRealtime(0.8f);
+        }
         else
         {
-            Testo(passivo ? "Tieni la mano destra ferma a riposo e guarda" : "Tieni la mano destra ferma a riposo");
+            Testo("Tieni la mano destra ferma a riposo");
             yield return new WaitForSecondsRealtime(0.8f);
         }
         Testo("");
@@ -225,7 +303,9 @@ public class TB_ExperimentManager : MonoBehaviour
             else if (passivo)
             {
                 if (!replayAvviato && now >= tAvvioReplay) { cin.Avvia(); replayAvviato = true; }
-                if (now >= tEventoProgrammato) { t.tEvento = now; break; }
+                // il tasto scende con le dita della clip nell'ultimo tratto prima della chiusura
+                lampadina.compressioneReplay = Mathf.Clamp01((float)((now - (tEventoProgrammato - durataCompressionePassiva)) / durataCompressionePassiva));
+                if (now >= tEventoProgrammato) { t.tEvento = now; lampadina.compressioneReplay = -1f; break; }
             }
             else
             {
@@ -288,7 +368,7 @@ public class TB_ExperimentManager : MonoBehaviour
         slider.Chiudi();
         Testo("");
 
-        logger.Scrivi(t);
+        if (!inProva) logger.Scrivi(t);   // i trial di prova non vanno nel log
         yield return new WaitForSecondsRealtime(Random.Range(iti.x, iti.y));
     }
 
@@ -319,8 +399,7 @@ public class TB_ExperimentManager : MonoBehaviour
         PreparaScena(prossima);
         Testo(msg);
         yield return null;
-        yield return new WaitUntil(() => Input.GetKeyDown(tastoAvvio) ||
-            TB_Input.XGiu);
+        yield return new WaitUntil(Avanti);
         Testo("");
     }
 
@@ -329,7 +408,7 @@ public class TB_ExperimentManager : MonoBehaviour
         string corpo = c.agency switch
         {
             TB_Agency.Attivo => $"Usa la {(c.effettore == TB_Effettore.Mano ? "MANO" : "PINZETTA")}: dopo il mirino stringi il pulsante quando vuoi.",
-            TB_Agency.Passivo => $"La {(c.effettore == TB_Effettore.Mano ? "MANO" : "PINZETTA")} si muoverà da sola. Tieni la mano destra ferma a riposo.",
+            TB_Agency.Passivo => $"La {(c.effettore == TB_Effettore.Mano ? "MANO" : "PINZETTA")} stringerà il pulsante da sola. Tieni la mano aperta attorno al pulsante, rilassata e ferma: non stringere.",
             _ => "Il pulsante si abbasserà da solo. Tieni la mano destra ferma a riposo.",
         };
         return $"Blocco {b}/{tot}\n{corpo}\nStima i ms tra il primo evento e la luce.\n\nPremi X";

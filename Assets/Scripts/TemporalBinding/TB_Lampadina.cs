@@ -21,8 +21,12 @@ public class TB_Lampadina : MonoBehaviour
     public Transform tasto;                  // parte mobile (origine alla sua base)
     public float corsaTasto = 0.006f;        // metri
     public AudioSource suonoClick;
+    [Tooltip("Se assegnato, il tasto si abbassa seguendo la chiusura delle dita (fino al clic dell'azione)")]
+    public TB_PinchSensor sensore;
 
     Vector3 posTastoRiposo;
+    bool tastoForzato;
+    [System.NonSerialized] public float compressioneReplay = -1f;   // >= 0: la impone il manager nel passivo
     Material matFilamento, matVetro;
     double tProgrammato = -1;
     public double TAccensione { get; private set; } = -1;
@@ -47,14 +51,31 @@ public class TB_Lampadina : MonoBehaviour
         }
     }
 
+    // premuto = tasto a fondo corsa (azione avvenuta); false = torna a seguire le dita
     public void PremiTasto(bool premuto)
     {
-        if (tasto) tasto.localPosition = posTastoRiposo - (premuto ? Vector3.up * corsaTasto : Vector3.zero);
+        tastoForzato = premuto;
+        AbbassaTasto(premuto ? 1f : 0f);
         if (premuto && suonoClick) suonoClick.Play();
+    }
+
+    // frazione 0-1 della corsa, sempre verso il basso del mondo (il FBX può arrivare ruotato)
+    void AbbassaTasto(float f)
+    {
+        if (!tasto) return;
+        tasto.localPosition = posTastoRiposo - tasto.parent.InverseTransformVector(Vector3.up) * (corsaTasto * f);
     }
 
     void Update()
     {
+        // il clic finale lo dà PremiTasto(true) nel frame dell'azione: qui al massimo il 90% della corsa
+        if (!tastoForzato)
+        {
+            float f = sensore ? sensore.Compressione : 0f;
+            if (compressioneReplay >= 0f) f = compressioneReplay;     // passivo: segue le dita della clip
+            AbbassaTasto(Mathf.Min(f, 0.9f));
+        }
+
         if (tProgrammato < 0 || Accesa) return;
         double now = Time.realtimeSinceStartupAsDouble;
         // intervallo nominale, non l'ultimo deltaTime: un frame perso non deve spostare la soglia

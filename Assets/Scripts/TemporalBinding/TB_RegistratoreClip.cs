@@ -26,6 +26,7 @@ public class TB_RegistratoreClip : MonoBehaviour
 #if UNITY_EDITOR
     GameObjectRecorder recorder;
     float tRegistrazione, tChiusura;
+    float aperturaMin = 1f, distanzaAllaMin = -1f;
     public bool StaRegistrando => recorder != null;
 
     void Update()
@@ -34,7 +35,7 @@ public class TB_RegistratoreClip : MonoBehaviour
         {
             recorder = new GameObjectRecorder(gameObject);
             recorder.BindComponentsOfType<Transform>(gameObject, true);
-            tRegistrazione = 0f; tChiusura = -1f;
+            tRegistrazione = 0f; tChiusura = -1f; aperturaMin = 1f; distanzaAllaMin = -1f;
             Debug.Log($"[TB] Registrazione '{nome}' iniziata: apri pollice e indice sul pulsante, chiudi una volta, poi F6");
         }
         else if (Input.GetKeyDown(ferma) && recorder != null)
@@ -48,6 +49,12 @@ public class TB_RegistratoreClip : MonoBehaviour
         if (recorder == null) return;
         recorder.TakeSnapshot(Time.deltaTime);
         tRegistrazione = recorder.currentTime;
+        // diagnostica: la presa più chiusa e a che distanza dal tasto è avvenuta
+        if (sensore && sensore.Tracciata && sensore.Apertura < aperturaMin)
+        {
+            aperturaMin = sensore.Apertura;
+            distanzaAllaMin = sensore.clicker ? Vector3.Distance(sensore.PuntoPresa, sensore.clicker.position) : 0f;
+        }
         if (tChiusura < 0 && sensore && sensore.ChiusuraQuestoFrame)
         {
             tChiusura = tRegistrazione;
@@ -63,7 +70,8 @@ public class TB_RegistratoreClip : MonoBehaviour
         recorder = null;
         if (tChiusura < 0)
         {
-            Debug.LogWarning($"[TB] Registrazione '{nome}' scartata: nessuna chiusura sul pulsante rilevata");
+            Debug.LogWarning($"[TB] Registrazione '{nome}' scartata: nessuna chiusura sul pulsante rilevata " +
+                (sensore ? $"(presa più chiusa: apertura {aperturaMin:F2}, soglia {sensore.SogliaAttiva:F2}; a {distanzaAllaMin * 100:F1} cm dal tasto, raggio {sensore.raggioClicker * 100:F0} cm)" : "(sensore non collegato)"));
             return;
         }
         AnimationUtility.SetAnimationEvents(clip, new[] { new AnimationEvent { time = tChiusura, functionName = TB_Cinematica.EventoChiusura } });

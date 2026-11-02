@@ -19,6 +19,12 @@ public class TB_Cinematica : MonoBehaviour
     [Tooltip("In editor, se 'clips' è vuoto, carica le clip di Registrazioni che iniziano con questo prefisso")]
     public string prefissoClip = "";
 
+    [Header("Solo dita")]
+    [Tooltip("Se attivo la clip muove solo le ossa sotto 'mano' (dita, ganasce): braccio e polso restano dal vivo")]
+    public bool soloDita = true;
+    [Tooltip("Osso della mano destra dell'avatar (mixamorig_RightHand)")]
+    public Transform mano;
+
     [Header("Rilevamento chiusura senza evento (fallback)")]
     public Transform puntaA;
     public Transform puntaB;
@@ -79,11 +85,44 @@ public class TB_Cinematica : MonoBehaviour
         if (clipInCorso != null)
         {
             float t = (float)(Time.realtimeSinceStartupAsDouble - tInizio);
-            clipInCorso.SampleAnimation(fantoccio, Mathf.Min(t, clipInCorso.length));
+            Campiona(clipInCorso, Mathf.Min(t, clipInCorso.length));
         }
         else if (inPosa && clipPreparata != null)
-            clipPreparata.SampleAnimation(fantoccio, 0f);
+            Campiona(clipPreparata, 0f);
     }
+
+    // Solo dita: la clip muove soltanto ciò che sta sotto l'osso della mano (falangi, ganasce della pinzetta);
+    // spalla, braccio, avambraccio e polso restano quelli tracciati dal vivo, così la mano è sempre dove la
+    // tiene il partecipante (sul pulsante) e una clip vale per tutti i soggetti e per ogni posizione del tasto.
+    void Campiona(AnimationClip clip, float t)
+    {
+        if (!soloDita || !mano) { clip.SampleAnimation(fantoccio, t); return; }
+        if (bloccati == null)
+        {
+            var lista = new List<Transform>();
+            foreach (var tr in fantoccio.GetComponentsInChildren<Transform>(true))
+                if (tr == mano || !tr.IsChildOf(mano)) lista.Add(tr);
+            bloccati = lista.ToArray();
+            posBloccate = new Vector3[bloccati.Length];
+            rotBloccate = new Quaternion[bloccati.Length];
+            scaBloccate = new Vector3[bloccati.Length];
+        }
+        for (int i = 0; i < bloccati.Length; i++)
+        {
+            var tr = bloccati[i];
+            posBloccate[i] = tr.localPosition; rotBloccate[i] = tr.localRotation; scaBloccate[i] = tr.localScale;
+        }
+        clip.SampleAnimation(fantoccio, t);
+        for (int i = 0; i < bloccati.Length; i++)
+        {
+            var tr = bloccati[i];
+            tr.localPosition = posBloccate[i]; tr.localRotation = rotBloccate[i]; tr.localScale = scaBloccate[i];
+        }
+    }
+
+    Transform[] bloccati;
+    Vector3[] posBloccate, scaBloccate;
+    Quaternion[] rotBloccate;
 
     float TrovaChiusura(AnimationClip clip)
     {

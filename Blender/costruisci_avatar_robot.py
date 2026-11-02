@@ -155,6 +155,11 @@ print("pezzi per osso:", {k.replace('mixamorig_RightHand', ''): len(v) for k, v 
 mod = R.modifiers.new("Armature", 'ARMATURE'); mod.object = A
 R.parent = A; R.matrix_parent_inverse = A.matrix_world.inverted()
 
+# ---------------------------------------------------------------- pesi sfumati a polso e nocche (niente "pinne")
+SOLO_FUNZIONE = True
+exec(open(os.path.join(PROGETTO, r"Blender\robot_pesi_giunture.py")).read())
+sfuma_giunture(R, A)
+
 # ---------------------------------------------------------------- export
 for o in bpy.context.scene.objects: o.select_set(False)
 objs = [A] + list(A.children)

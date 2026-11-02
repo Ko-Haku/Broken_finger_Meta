@@ -12,13 +12,12 @@ using UnityEngine.UI;
 //  - TB_Esperimento: manager, sensore del pinch, logger, slider, cinematiche Mano/Tool, ParticipantInfo
 //  - registratori delle clip passive sulle spalle destre dei due avatar (F5/F6)
 //  - interfaccia world-space (istruzioni + slider) dietro la lampadina, mirino tra pulsante e lampadina
-//  - pistone della condizione Esterno con l'asta sopra il tasto
+//  - pulsante su asta e pistone della condizione Esterno sulla stessa asta (TB_PulsanteAsta)
 //  - profilo Bloom ricostruito (il componente era andato perso)
 // Batch: Unity.exe -batchmode -quit -projectPath ... -executeMethod TB_MontaEsperimento.Esegui
 public static class TB_MontaEsperimento
 {
     const string Scena = "Assets/Scenes/TemporalBinding/TemporalBinding_Pilota.unity";
-    const string FbxPistone = "Assets/MODELS/TemporalBinding/Postazione_TB/Pistone.fbx";
     const string ProfiloBloom = "Assets/MODELS/TemporalBinding/Postazione_TB/Bloom_TB.asset";
 
     static readonly StringBuilder Log = new StringBuilder();
@@ -76,8 +75,8 @@ public static class TB_MontaEsperimento
         // ---- interfaccia
         CostruisciUI(root.transform, man, lamp, tasto, d);
 
-        // ---- pistone
-        man.pistone = CostruisciPistone(postazione, lamp, tasto, d);
+        // ---- pulsante su asta + pistone montato sulla testa (TB_PulsanteAsta, conserva la calibrazione)
+        man.pistone = TB_PulsanteAsta.Applica(Log);
 
         // ---- luce sempre abilitata, intensità gestita da TB_Lampadina
         if (lamp.luce)
@@ -116,6 +115,9 @@ public static class TB_MontaEsperimento
         var cin = go.AddComponent<TB_Cinematica>();
         cin.fantoccio = spalla ? spalla.gameObject : null;
         cin.prefissoClip = prefisso;
+        // passivo: la clip muove solo dita/ganasce, braccio e polso restano quelli tracciati
+        cin.soloDita = true;
+        cin.mano = avatar.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "mixamorig_RightHand");
 
         if (spalla)
         {
@@ -201,43 +203,6 @@ public static class TB_MontaEsperimento
         t.textWrappingMode = TextWrappingModes.Normal;
         var r = (RectTransform)go.transform; r.anchoredPosition = pos; r.sizeDelta = dim;
         return t;
-    }
-
-    // ------------------------------------------------------------------ pistone
-
-    static TB_Pistone CostruisciPistone(Transform postazione, TB_Lampadina lamp, Transform tasto, Vector3 d)
-    {
-        var vecchio = postazione.Find("Pistone");
-        if (vecchio) Object.DestroyImmediate(vecchio.gameObject);
-        var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPistone);
-        if (!fbx) { L("!! Pistone.fbx non trovato"); return null; }
-
-        var go = (GameObject)PrefabUtility.InstantiatePrefab(fbx, postazione);
-        go.name = "Pistone";
-        go.SetActive(true);
-        var asta = Cerca(go.transform, "Asta");
-        var punta = Cerca(go.transform, "Punta");
-
-        // ruota: dalla colonna (origine) all'asta deve puntare verso il partecipante (-d)
-        // il FBX arriva con la Z di Blender in alto: prima la si porta su Y
-        var raddrizza = Quaternion.Euler(-90f, 0f, 0f);
-        go.transform.rotation = raddrizza;
-        Vector3 off = asta.position - go.transform.position; off.y = 0;
-        go.transform.rotation = Quaternion.AngleAxis(Vector3.SignedAngle(off, -d, Vector3.up), Vector3.up) * raddrizza;
-        // base sul tavolo (stessa quota della base del pulsante), asta sopra il centro del tasto
-        float yTavolo = tasto.parent.position.y;     // origine del pulsante = base sul tavolo
-        off = asta.position - go.transform.position;
-        go.transform.position = new Vector3(tasto.position.x - off.x, yTavolo, tasto.position.z - off.z);
-
-        float yPunta = punta.GetComponent<Renderer>().bounds.min.y;
-        float yTasto = tasto.GetComponentInChildren<Renderer>().bounds.max.y;
-        var p = go.AddComponent<TB_Pistone>();
-        p.asta = asta;
-        p.corsaContatto = yPunta - yTasto;
-        p.corsaExtra = lamp.corsaTasto;
-        go.SetActive(false);                      // visibile solo nei blocchi Esterno
-        L($"Pistone: base {go.transform.position}, corsa al contatto {p.corsaContatto * 1000:F0} mm");
-        return p;
     }
 
     // ------------------------------------------------------------------ bloom

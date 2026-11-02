@@ -56,7 +56,7 @@ public class TB_SliderRisposta : MonoBehaviour
         v = Mathf.Clamp(v, min, max);
         Aggiorna();
 
-        if (TB_Input.XGiu || Input.GetKeyDown(conferma))
+        if (TB_Input.XGiu || Input.GetKeyDown(conferma) || Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             Confermato = true;
             attivo = false;
