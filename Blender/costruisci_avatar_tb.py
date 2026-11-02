@@ -17,8 +17,17 @@ from mathutils import Matrix, Vector
 
 PROGETTO = r"D:\unity projects\Esperimenti 2027"
 AVATAR = os.path.join(PROGETTO, r"Assets\prefabs\avatars\avatar_stumped 1.fbx")
-LM = {'Right': os.path.join(PROGETTO, r"Assets\LMRealisticHands\Models\Hand_04.fbx"),
-      'Left': os.path.join(PROGETTO, r"Assets\LMRealisticHands\Models\Hand_03.fbx")}
+# Variante delle mani: M = LM maschili (Hand_04/Hand_03), F = femminili (costruisci_mani_femminili.py,
+# stesso scheletro e stessi gruppi di pesi LM). Da riga di comando: set TB_MANI=F prima di lanciare Blender.
+# La variante F esporta Avatar_ManoF.fbx / Avatar_ToolF.fbx (le maschili restano intatte).
+MANI = os.environ.get("TB_MANI", "M").upper()
+if MANI == "F":
+    LM = {'Right': os.path.join(PROGETTO, r"Assets\MODELS\TemporalBinding\ManiFemminili\ManoF_R.fbx"),
+          'Left': os.path.join(PROGETTO, r"Assets\MODELS\TemporalBinding\ManiFemminili\ManoF_L.fbx")}
+else:
+    LM = {'Right': os.path.join(PROGETTO, r"Assets\LMRealisticHands\Models\Hand_04.fbx"),
+          'Left': os.path.join(PROGETTO, r"Assets\LMRealisticHands\Models\Hand_03.fbx")}
+SUFFISSO = "F" if MANI == "F" else ""
 OUT = os.path.join(PROGETTO, r"Assets\MODELS\TemporalBinding\Avatar_TB")
 DITA = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
 ALLUNGA = 0.04          # m di avambraccio LM aggiunti sotto la manica
@@ -207,7 +216,7 @@ for lato in ('Right', 'Left'):
           f"pelle nascosta rimossa {nascosti} vertici")
 
 # un solo materiale pelle per i due bracci (in Unity -> Pelle_LM)
-pelle = bracci['Right'].data.materials[0]; pelle.name = 'AfroAmerican'
+pelle = bracci['Right'].data.materials[0]; pelle.name = 'Pelle_F' if MANI == "F" else 'AfroAmerican'
 bracci['Left'].data.materials[0] = pelle
 
 # ---------------------------------------------------------------- 6. moncherino destro
@@ -247,6 +256,6 @@ def esporta(nome, escludi):
         primary_bone_axis='Y', secondary_bone_axis='X', bake_anim=False, mesh_smooth_type='FACE')
     return sorted(o.name for o in objs if o.type == 'MESH')
 os.makedirs(OUT, exist_ok=True)
-print("Avatar_Mano:", esporta("Avatar_Mano.fbx", 'Moncherino_LM_R'))
-print("Avatar_Tool:", esporta("Avatar_Tool.fbx", 'Braccio_LM_R'))
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(PROGETTO, r"Blender\Avatar_TB.blend"))
+print(f"Avatar_Mano{SUFFISSO}:", esporta(f"Avatar_Mano{SUFFISSO}.fbx", 'Moncherino_LM_R'))
+print(f"Avatar_Tool{SUFFISSO}:", esporta(f"Avatar_Tool{SUFFISSO}.fbx", 'Braccio_LM_R'))
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(PROGETTO, rf"Blender\Avatar_TB{SUFFISSO}.blend"))

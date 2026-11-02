@@ -56,6 +56,22 @@ def icp(F, ref_pts, iterazioni=40, campioni=4000):
         F.matrix_world = (Matrix.Translation(t) @ (Rm.to_4x4() @ Matrix.Scale(s, 4))) @ F.matrix_world
     return err
 
+def riempi_mancanti(img, nome):
+    """I raggi della cottura che non trovano la mano maschile (punte delle dita, unghie più lunghe,
+    pieghe) lasciano pixel neri: li si riempie con il valore tipico della pelle (normale piatta)."""
+    import numpy as np
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32); img.pixels.foreach_get(px); px = px.reshape(-1, 4)
+    buio = px[:, :3].max(axis=1) < 0.02
+    if nome == "Normal":
+        px[buio, :3] = (0.5, 0.5, 1.0)
+    else:
+        validi = px[~buio, :3]
+        px[buio, :3] = np.median(validi, axis=0) if len(validi) else 0.5
+    px[:, 3] = 1.0
+    img.pixels.foreach_set(px.ravel()); img.update()
+    print(f"  {nome}: riempiti {int(buio.sum())} pixel senza dato ({100 * buio.mean():.1f}%)")
+
 def costruisci(lato):
     pulisci()
     fbx = {'R': "Hand_04.fbx", 'L': "Hand_03.fbx"}[lato]
@@ -68,13 +84,20 @@ def costruisci(lato):
     polso_m, medio_m = hb(f'{p}_Wrist'), hb(f'{p}_Finger_Middle_C')
     gomito_m = hb(f'{p}_Forearm')
 
-    # mano + avambraccio femminili (destra; la sinistra è la destra specchiata)
+    # mano + avambraccio femminili (sinistra nel modello; la destra è la sinistra specchiata)
     mano, avamb = importa_obj("model_2"), importa_obj("model_3")
+    # mano e avambraccio usavano due texture diverse con le stesse UV: si separano (mano a sinistra,
+    # avambraccio a destra di un'immagine 2:1), altrimenti nella cottura si scrivono sugli stessi pixel
+    for o, u0 in ((mano, 0.0), (avamb, 0.5)):
+        uv = o.data.uv_layers.active.data
+        for l in uv: l.uv = (u0 + (l.uv.x % 1.0) * 0.5, l.uv.y % 1.0)
     for o in bpy.context.selected_objects: o.select_set(False)
     mano.select_set(True); avamb.select_set(True); bpy.context.view_layer.objects.active = mano
     bpy.ops.object.join(); F = mano; F.name = f"ManoF_{lato}"
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-    if lato == 'L':
+    # il modello estratto è una mano SINISTRA: si specchia per ottenere la destra
+    # (verificato affiancandola alla Hand_04 LM: senza specchio il pollice era dal lato opposto)
+    if lato == 'R':
         F.data.transform(Matrix.Scale(-1, 4, Vector((1, 0, 0))))
         bm = bmesh.new(); bm.from_mesh(F.data); bmesh.ops.reverse_faces(bm, faces=bm.faces); bm.to_mesh(F.data); bm.free()
 
@@ -101,6 +124,15 @@ def costruisci(lato):
     bpy.ops.object.select_all(action='DESELECT'); F.select_set(True); bpy.context.view_layer.objects.active = F
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
     print(f"{lato}: ICP errore medio {err*1000:.1f} mm")
+
+    # il modello estratto è spezzato in isole con vertici doppi (o quasi: < 0.1 mm) lungo le cuciture
+    # delle UV, tra mano e avambraccio e alla base del pollice: saldati, altrimenti i due lati di ogni
+    # cucitura prendono pesi diversi e piegando le dita la pelle si apre (a 0.1 mm i bordi aperti vanno a zero)
+    bm = bmesh.new(); bm.from_mesh(F.data); n0 = len(bm.verts)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    aperti = sum(1 for e in bm.edges if e.is_boundary)
+    bm.to_mesh(F.data); bm.free(); F.data.update()
+    print(f"{lato}: saldati {n0 - len(F.data.vertices)} vertici doppi, bordi aperti rimasti {aperti}")
 
     # pesi dalla mano maschile
     for g in maschio.vertex_groups: F.vertex_groups.new(name=g.name)
@@ -152,7 +184,7 @@ def costruisci(lato):
     mat_m = maschio.data.materials[0]
     imgs = {}
     for nome, cs in (("Albedo", "sRGB"), ("Normal", "Non-Color"), ("Roughness", "Non-Color")):
-        img = bpy.data.images.new(f"ManoF_{nome}", TEX, TEX); img.colorspace_settings.name = cs; imgs[nome] = img
+        img = bpy.data.images.new(f"ManoF_{nome}", TEX * 2, TEX); img.colorspace_settings.name = cs; imgs[nome] = img
     mat = bpy.data.materials.new("Pelle_F"); mat.use_nodes = True; nt = mat.node_tree
     tn = nt.nodes.new("ShaderNodeTexImage")
     F.data.materials.clear(); F.data.materials.append(mat)
@@ -169,13 +201,16 @@ def costruisci(lato):
     mnt.links.new(nmm.outputs["Normal"], mb.inputs["Normal"])
     maschio.data.materials.clear(); maschio.data.materials.append(mm)
     sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.samples = 4; sc.cycles.device = 'CPU'
-    bk = sc.render.bake; bk.use_selected_to_active = True; bk.cage_extrusion = 0.03; bk.max_ray_distance = 0.0; bk.margin = 16
+    bk = sc.render.bake; bk.use_selected_to_active = True; bk.cage_extrusion = 0.03; bk.max_ray_distance = 0.0
+    # margine largo ed esteso: nei livelli di mipmap più bassi il fondo non deve filtrare lungo le cuciture delle dita
+    bk.margin = 64; bk.margin_type = 'EXTEND'
     bpy.ops.object.select_all(action='DESELECT'); maschio.select_set(True); F.select_set(True); bpy.context.view_layer.objects.active = F
     for nome, tipo in (("Albedo", 'DIFFUSE'), ("Roughness", 'ROUGHNESS'), ("Normal", 'NORMAL')):
         tn.image = imgs[nome]; nt.nodes.active = tn
         if tipo == 'DIFFUSE':
             bk.use_pass_direct = False; bk.use_pass_indirect = False; bk.use_pass_color = True
         bpy.ops.object.bake(type=tipo)
+        riempi_mancanti(imgs[nome], nome)
         imgs[nome].filepath_raw = os.path.join(OUT, f"ManoF_{nome}.png"); imgs[nome].file_format = 'PNG'
         os.makedirs(OUT, exist_ok=True); imgs[nome].save()
     # materiale finale con le texture cotte

@@ -1,0 +1,4 @@
+Soggetto,Numero,OrdineBlocchi,Blocco,Condizione,Effettore,Agency,Trial,Warmup,DelayNominale_ms,DelayEffettivo_ms,Stima_ms,SliderStart,RT_risposta_ms,Latenza_azione_ms,MovimentoManoReale_mm,ClipPassivo,FrameRate,Refresh_Hz,FramePersi,Ripetizione,Timestamp
+prova,1,Mano_Attivo-Mano_Passivo-Esterno-Tool_Attivo-Tool_Passivo,0,Mano_Attivo,Mano,Attivo,0,1,278,279.0,373,380,13618,1087.0,0.0,-1,72,72.0,14,0,16:35:30.280
+prova,1,Mano_Attivo-Mano_Passivo-Esterno-Tool_Attivo-Tool_Passivo,0,Mano_Attivo,Mano,Attivo,1,1,153,152.5,147,760,3640,1991.8,0.0,-1,72,72.0,0,0,16:35:40.018
+prova,1,Mano_Attivo-Mano_Passivo-Esterno-Tool_Attivo-Tool_Passivo,0,Mano_Attivo,Mano,Attivo,2,1,403,405.0,228,719,1764,705.5,0.0,-1,72,72.0,0,0,16:35:47.142
