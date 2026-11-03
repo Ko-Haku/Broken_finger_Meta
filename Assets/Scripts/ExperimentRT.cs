@@ -607,7 +607,8 @@ public class ExperimentRT : MonoBehaviour
 
     void SaveLog()
     {
-        string dir = Path.Combine(Application.dataPath, "Reports");
+        // scena di Eseguito/Osservato (con ExperimentLogger): cartella dati di quell'esperimento, come nel suo progetto
+        string dir = FindObjectOfType<ExperimentLogger>() != null ? @"D:\Dati Esperimenti\EO" : Path.Combine(Application.dataPath, "Reports");
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, $"BURST_{codiceSoggetto}_{condizione}.csv");
         File.WriteAllLines(path, log);

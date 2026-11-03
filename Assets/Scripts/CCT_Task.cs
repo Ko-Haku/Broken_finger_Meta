@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -78,31 +78,48 @@ public class CCT_Task : MonoBehaviour
     void Start()
     {
         if (randomSeed >= 0) UnityEngine.Random.InitState(randomSeed);
-
         zeit = new Stopwatch();
+        // rigId is only used for debug log tags before the file is opened — resolve early.
+        rigId = string.IsNullOrWhiteSpace(customRigId) ? Safe(gameObject.name) : Safe(customRigId);
+        // File creation is deferred to StartMisura so we don't drop empty cct_*.csv
+        // shells when the CCT phase never actually runs (e.g. test plays, subjects
+        // who skip the CCT, scene reloads).
+    }
+
+    private void EnsureFileCreated()
+    {
+        if (filePath != null) return;
 
         var pi = ParticipantInfo.Instance;
         nome           = pi != null ? Safe(pi.Codice_Soggetto)   : "NA";
         cognome        = pi != null ? Safe(pi.Condizione)         : "NA";
         numeroSoggetto = pi != null ? Safe(pi.NumeroSoggetto)     : "NA";
 
-        // Se ExperimentRT non ha ancora impostato la condizione, fallback
+        var logger = FindObjectOfType<ExperimentLogger>();
+        if (nome == "NA" && logger != null && !string.IsNullOrEmpty(logger.subjectId))
+            nome = Safe(logger.subjectId);
+
         currentCondition = string.IsNullOrEmpty(overrideCondition) ? cognome : overrideCondition;
 
         rigId    = string.IsNullOrWhiteSpace(customRigId) ? Safe(gameObject.name) : Safe(customRigId);
         runStamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-        // Prepara directory e percorso file *unico per rig e per run*
-        string directoryPath = Path.Combine(Application.dataPath, "Reports");
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
+        // Prefer the logger's per-subject folder so all CSVs land together.
+        string directoryPath;
+        if (logger != null && !string.IsNullOrEmpty(logger.FilePath))
+            directoryPath = Path.GetDirectoryName(logger.FilePath);
+        else if (FindObjectOfType<CCT_ReachExperiment>() != null)
+            directoryPath = @"D:\Dati Esperimenti\EO";
+        else    // scene di Esperimenti 2027 senza ExperimentLogger (Movimento impossibile, nuovi strumenti): come prima
+            directoryPath = Path.Combine(Application.dataPath, "Reports");
+
+        Directory.CreateDirectory(directoryPath);
 
         filePath = Path.Combine(directoryPath, $"cct_{nome}_{cognome}_{rigId}_{runStamp}.csv");
 
-        // Header
         logData = new List<string>();
         logData.Add("CodiceSoggetto,NumeroSoggetto,Condizione,RigId,Trial,Type,Response,Time(ms)");
-        File.WriteAllLines(filePath, logData); // crea subito il file con header
+        File.WriteAllLines(filePath, logData);
     }
 
     void Update()
@@ -126,13 +143,20 @@ public class CCT_Task : MonoBehaviour
 
     public System.Collections.IEnumerator StartMisura()
     {
-        // Setup riferimenti (fallback via Find se non assegnati)
-        if (pollice == null) pollice = GameObject.Find("pollice");
-        if (indice  == null) indice  = GameObject.Find("indice");
-
+        // I riferimenti devono essere assegnati dall'owner (CCT_ReachExperiment)
+        // prima di chiamare StartMisura. Niente fallback via Find: in scena esistono
+        // più oggetti chiamati "pollice"/"indice" (uno per effettore) e il Find
+        // restituirebbe il primo non deterministico, causando swap errati.
+        // Esperimenti 2027: nelle scene senza CCT_ReachExperiment i riferimenti non sono assegnati e c'è una sola
+        // coppia "pollice"/"indice": lì resta il vecchio fallback per nome
+        if ((pollice == null || indice == null) && FindObjectOfType<CCT_ReachExperiment>() == null)
+        {
+            if (pollice == null) pollice = GameObject.Find("pollice");
+            if (indice  == null) indice  = GameObject.Find("indice");
+        }
         if (pollice == null || indice == null)
         {
-            UnityEngine.Debug.LogError($"[{rigId}] CCT_Task: 'pollice' o 'indice' non trovati in scena.");
+            UnityEngine.Debug.LogError($"[{rigId}] CCT_Task: 'pollice' o 'indice' non assegnati. Assegnali da CCT_ReachExperiment prima di StartMisura.");
             yield break;
         }
 
@@ -144,6 +168,9 @@ public class CCT_Task : MonoBehaviour
             UnityEngine.Debug.LogError($"[{rigId}] CCT_Task: manca 'misura_manager' su pollice/indice.");
             yield break;
         }
+
+        // Defer file creation until we're actually about to run trials.
+        EnsureFileCreated();
 
         // Pausa dopo la darkscreen (gestita fuori) prima di iniziare i trials
         if (preStartDelay > 0f)

@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 
 // Un CSV per sessione, una riga per trial, scritta subito (niente perdita dati se crasha).
+// Il questionario di fine blocco va in un secondo CSV con lo stesso nome + "_questionario", una riga per item.
 public class TB_Logger : MonoBehaviour
 {
     string filePath;
@@ -23,9 +24,24 @@ public class TB_Logger : MonoBehaviour
             "DelayNominale_ms,DelayEffettivo_ms,Stima_ms,SliderStart,RT_risposta_ms,Latenza_azione_ms," +
             "MovimentoManoReale_mm,ClipPassivo,FrameRate,Refresh_Hz,FramePersi,Ripetizione,Timestamp\n");
         soggettoId = soggetto; numeroId = numero; ordine = ordineBlocchi;
+        fileQuestionario = Path.Combine(dir, Path.GetFileNameWithoutExtension(filePath) + "_questionario.csv");
+        File.WriteAllText(fileQuestionario,
+            "Soggetto,Numero,OrdineBlocchi,Blocco,Condizione,Effettore,Agency,Item,Posizione,Risposta,SliderStart,RT_ms,Testo,Timestamp\n");
     }
 
-    string soggettoId, numeroId, ordine;
+    string soggettoId, numeroId, ordine, fileQuestionario;
+    public string FileQuestionario => fileQuestionario;
+
+    public void ScriviItem(int blocco, TB_Condizione c, string item, int posizione, int risposta, int sliderStart, double rtMs, string testo)
+    {
+        if (fileQuestionario == null) return;
+        string riga = string.Join(",",
+            soggettoId, numeroId, ordine, blocco, c.Nome, c.effettore, c.agency,
+            item, posizione, risposta, sliderStart, rtMs.ToString("F0", Inv),
+            "\"" + testo.Replace("\"", "'") + "\"",
+            DateTime.Now.ToString("HH:mm:ss.fff"));
+        File.AppendAllText(fileQuestionario, riga + "\n");
+    }
 
     public void Scrivi(TB_Trial t)
     {

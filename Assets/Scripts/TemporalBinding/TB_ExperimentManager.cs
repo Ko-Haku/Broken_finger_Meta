@@ -59,8 +59,63 @@ public class TB_ExperimentManager : MonoBehaviour
         { TB_Effettore.Tool, new List<double>() },
     };
 
+    [Header("Questionario a fine blocco")]
+    public bool questionarioFineBlocco = true;
+
     bool inCorso;
     bool sessioneFinita;                    // dopo "Fine. Grazie!" la schermata iniziale non lo sovrascrive
+
+    // ---------------- stato per il pannello dello sperimentatore (F1) ----------------
+    public bool InCorso => inCorso;
+    public bool InProva => inProva;
+    public bool SessioneFinita => sessioneFinita;
+    public string Fase { get; private set; } = "In attesa dell'avvio";
+    public bool AttendeX { get; private set; }
+    public int BloccoCorrente { get; private set; }          // 1-based nella sequenza, 0 = familiarizzazione
+    public int BlocchiTotali { get; private set; }
+    public string CondizioneCorrente { get; private set; } = "";
+    public int TrialCorrente { get; private set; }           // 1-based
+    public int TrialTotali { get; private set; }
+    public int TrialRiscaldamento { get; private set; }
+    public int RipetutiBlocco { get; private set; }
+    public int ItemCorrente { get; private set; }
+    public int ItemTotali { get; private set; }
+    public List<TB_Condizione> OrdineSessione { get; private set; } = new List<TB_Condizione>();
+    public TB_Trial UltimoTrial { get; private set; }
+
+    // comandi dal pannello
+    bool avantiRichiesto, saltaBloccoRichiesto, saltaQuestionarioRichiesto;
+    public bool pausaRichiesta;             // la sessione si ferma alla fine del trial in corso
+    public void ComandoAvanti() => avantiRichiesto = true;
+    public void ComandoSaltaBlocco() { if (inCorso) saltaBloccoRichiesto = true; }
+    public void ComandoSaltaQuestionario() { if (inCorso) saltaQuestionarioRichiesto = true; }
+    public bool PuoAvviare => !inCorso && LeggiSoggetto(out _, out _);
+    public void ComandoAvvia() { if (PuoAvviare) StartCoroutine(Sessione()); }
+    public void ComandoProva(int k) { if (!inCorso && k >= 0 && k < TB_Condizione.Tutte.Length) StartCoroutine(Prova(TB_Condizione.Tutte[k])); }
+
+    // interrompe tutto subito (il log resta con i trial già scritti)
+    public void ComandoTermina()
+    {
+        if (!inCorso) return;
+        StopAllCoroutines();
+        Debug.LogWarning($"[TB] Sessione interrotta dallo sperimentatore ({Fase}, blocco {BloccoCorrente}, trial {TrialCorrente})");
+        if (slider) slider.Chiudi();
+        if (mirino) mirino.SetActive(false);
+        if (lampadina) { lampadina.Spegni(); lampadina.PremiTasto(false); lampadina.compressioneReplay = -1f; }
+        if (cinematicaMano) cinematicaMano.Ferma();
+        if (cinematicaTool) cinematicaTool.Ferma();
+        if (pistone) { pistone.Ritira(); pistone.gameObject.SetActive(false); }
+        if (swap) swap.enabled = true;
+        inCorso = false; inProva = false; sessioneFinita = true;
+        pausaRichiesta = false; AttendeX = false;
+        Fase = "Interrotta";
+        Testo("Sessione interrotta");
+    }
+
+    void Awake()
+    {
+        if (!GetComponent<TB_PannelloSperimentatore>()) gameObject.AddComponent<TB_PannelloSperimentatore>();
+    }
 
     void Start()
     {
@@ -86,9 +141,16 @@ public class TB_ExperimentManager : MonoBehaviour
             StartCoroutine(Sessione());
     }
 
+    public string TestoAvvioPannello => TestoAvvio(out _);
+
     // avvio e pause: X sul controller sinistro, oppure S / X / Invio da tastiera
-    bool Avanti() => TB_Input.XGiu || Input.GetKeyDown(tastoAvvio) || Input.GetKeyDown(KeyCode.X) ||
-                     Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+    // (o il pulsante "Avanti" del pannello F1)
+    bool Avanti()
+    {
+        if (avantiRichiesto) { avantiRichiesto = false; return true; }
+        return TB_Input.XGiu || Input.GetKeyDown(tastoAvvio) || Input.GetKeyDown(KeyCode.X) ||
+               Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+    }
 
     // Numero soggetto -> sequenza di Williams (controbilanciamento dei blocchi) e ordine della familiarizzazione
     static bool LeggiSoggetto(out string codice, out int numero)
@@ -128,14 +190,22 @@ public class TB_ExperimentManager : MonoBehaviour
         inCorso = true; inProva = true; sessioneFinita = false;
         if (swap) swap.enabled = false;
         Debug.Log($"[TB] Prova del blocco {cond.Nome}: {trialProva} trial, non salvati");
+        OrdineSessione = new List<TB_Condizione> { cond };
+        BloccoCorrente = 1; BlocchiTotali = 1; CondizioneCorrente = "PROVA " + cond.Nome;
+        TrialCorrente = 0; TrialTotali = trialProva; TrialRiscaldamento = 0; RipetutiBlocco = 0; ItemTotali = 0;
+        Fase = "Prova: istruzioni";
         yield return Pausa($"PROVA: {cond.Nome}\n{TestoBlocco(cond, 1, 1)}\n\nPremi X", cond);
-        for (int i = 0; i < trialProva; i++)
+        for (int i = 0; i < trialProva && !saltaBloccoRichiesto; i++)
         {
             var t = new TB_Trial { blocco = 0, indice = i, warmup = true, condizione = cond,
                                    delayNominaleMs = delaysMs[i % delaysMs.Length] };
+            TrialCorrente = i + 1; Fase = "Prova: trial";
             yield return EseguiTrial(t);
+            yield return PausaSperimentatore();
         }
+        saltaBloccoRichiesto = false;
         if (swap) swap.enabled = true;
+        Fase = "In attesa dell'avvio"; BloccoCorrente = 0; TrialCorrente = 0; TrialTotali = 0;
         inCorso = false; inProva = false;    // torna la schermata iniziale
     }
 
@@ -149,6 +219,8 @@ public class TB_ExperimentManager : MonoBehaviour
         string numero = n.ToString();
 
         var ordine = OrdineWilliams(n);
+        OrdineSessione = ordine; BlocchiTotali = ordine.Count;
+        saltaBloccoRichiesto = saltaQuestionarioRichiesto = avantiRichiesto = false;
         logger.Apri(soggetto, numero, string.Join("-", ordine.Select(c => c.Nome)));
         Debug.Log($"[TB] Sessione: soggetto {soggetto} n. {n}, sequenza Williams {Sequenza(n)}: {string.Join(" > ", ordine.Select(c => c.Nome))}; " +
                   $"familiarizzazione {string.Join(" > ", OrdineFamiliarizzazione(n))}");
@@ -160,28 +232,41 @@ public class TB_ExperimentManager : MonoBehaviour
             foreach (var eff in OrdineFamiliarizzazione(n))
             {
                 var cond = new TB_Condizione(eff, TB_Agency.Attivo);
+                BloccoCorrente = 0; CondizioneCorrente = "Familiarizzazione " + (eff == TB_Effettore.Mano ? "Mano" : "Pinzetta");
+                TrialCorrente = 0; TrialTotali = trialFamiliarizzazione; TrialRiscaldamento = trialFamiliarizzazione; RipetutiBlocco = 0;
+                Fase = "Familiarizzazione: istruzioni";
                 yield return Pausa($"Familiarizzazione: {(eff == TB_Effettore.Mano ? "MANO" : "PINZETTA")}\n" +
                                    "Dopo che il mirino scompare, stringi il pulsante quando vuoi.\n" +
                                    "Poi indica quanti ms sono passati tra la tua azione e la luce.\n\nPremi X", cond);
-                for (int i = 0; i < trialFamiliarizzazione; i++)
+                for (int i = 0; i < trialFamiliarizzazione && !saltaBloccoRichiesto; i++)
                 {
                     var t = new TB_Trial { blocco = 0, indice = i, warmup = true, condizione = cond,
                                            delayNominaleMs = ArrotondaAlFrame(Random.Range(100, 1001)) };
+                    TrialCorrente = i + 1; Fase = "Familiarizzazione: trial";
                     yield return EseguiTrial(t);
+                    yield return PausaSperimentatore();
                 }
+                if (saltaBloccoRichiesto) Debug.LogWarning($"[TB] {CondizioneCorrente} saltata dallo sperimentatore al trial {TrialCorrente}");
+                saltaBloccoRichiesto = false;
             }
         }
 
         for (int b = primo; b < ordine.Count; b++)
         {
             var cond = ordine[b];
+            BloccoCorrente = b + 1; CondizioneCorrente = cond.Nome;
+            TrialCorrente = 0; RipetutiBlocco = 0; ItemCorrente = 0; ItemTotali = 0;
+            TrialTotali = warmupPerBlocco + delaysMs.Length * trialPerDelay; TrialRiscaldamento = warmupPerBlocco;
+            Fase = "Blocco: istruzioni";
             yield return Pausa(TestoBlocco(cond, b + 1, ordine.Count), cond);
             var lista = ListaTrial(cond, b + 1);
             int ripetuti = 0;
-            for (int i = 0; i < lista.Count; i++)
+            for (int i = 0; i < lista.Count && !saltaBloccoRichiesto; i++)
             {
                 var t = lista[i];
+                TrialCorrente = i + 1; TrialTotali = lista.Count; Fase = t.warmup ? "Blocco: riscaldamento" : "Blocco: trial";
                 yield return EseguiTrial(t);
+                yield return PausaSperimentatore();
                 // frame persi tra azione e luce: il trial resta nel log (FramePersi > 0, da escludere)
                 // e lo stesso delay viene ripetuto in un punto casuale del resto del blocco
                 if (t.framePersi > 0 && !t.warmup && ripetuti < maxRipetizioniPerBlocco)
@@ -191,10 +276,16 @@ public class TB_ExperimentManager : MonoBehaviour
                                            condizione = t.condizione, delayNominaleMs = t.delayNominaleMs,
                                            ripetizione = t.ripetizione + 1 };
                     lista.Insert(Random.Range(i + 1, lista.Count + 1), r);
+                    RipetutiBlocco = ripetuti; TrialTotali = lista.Count;
                 }
             }
+            if (saltaBloccoRichiesto) Debug.LogWarning($"[TB] Blocco {b + 1} ({cond.Nome}) saltato dallo sperimentatore al trial {TrialCorrente}/{lista.Count}");
+            saltaBloccoRichiesto = false;
+
+            if (questionarioFineBlocco) yield return Questionario(cond, b + 1, n);
         }
 
+        Fase = "Fine";
         Testo("Fine. Grazie!");
         sessioneFinita = true;
         if (swap) swap.enabled = true;
@@ -376,6 +467,7 @@ public class TB_ExperimentManager : MonoBehaviour
         slider.Chiudi();
         Testo("");
 
+        UltimoTrial = t;
         if (!inProva) logger.Scrivi(t);   // i trial di prova non vanno nel log
         yield return new WaitForSecondsRealtime(Random.Range(iti.x, iti.y));
     }
@@ -407,7 +499,54 @@ public class TB_ExperimentManager : MonoBehaviour
         PreparaScena(prossima);
         Testo(msg);
         yield return null;
+        AttendeX = true;
         yield return new WaitUntil(Avanti);
+        AttendeX = false;
+        Testo("");
+    }
+
+    // pausa chiesta dallo sperimentatore dal pannello: si ferma tra un trial e l'altro
+    IEnumerator PausaSperimentatore()
+    {
+        if (!pausaRichiesta || saltaBloccoRichiesto) yield break;
+        string fase = Fase;
+        Fase = "In pausa (sperimentatore)";
+        Testo("Pausa");
+        yield return new WaitUntil(() => !pausaRichiesta || saltaBloccoRichiesto);
+        Testo("");
+        Fase = fase;
+    }
+
+    // Questionario di fine blocco: item in ordine casuale riproducibile per soggetto e blocco, Likert 1-7 sullo slider
+    IEnumerator Questionario(TB_Condizione cond, int blocco, int numeroSoggetto)
+    {
+        saltaQuestionarioRichiesto = false;
+        var items = TB_Questionario.Ordine(numeroSoggetto, blocco);
+        ItemTotali = items.Count; ItemCorrente = 0;
+        Fase = "Questionario: istruzioni";
+        yield return Pausa("Fine del blocco.\nOra qualche domanda su quello che hai provato in questo blocco.\n" +
+                           $"Muovi lo slider con lo stick (da 1 = {TB_Questionario.AncoraMin.ToLower()}\na 7 = {TB_Questionario.AncoraMax.ToLower()}) " +
+                           "e conferma con X.\n\nPremi X per iniziare", cond);
+        for (int k = 0; k < items.Count && !saltaQuestionarioRichiesto; k++)
+        {
+            var it = items[k];
+            string testo = TB_Questionario.Testo(it, cond);
+            ItemCorrente = k + 1; Fase = "Questionario";
+            Testo($"Domanda {k + 1}/{items.Count}\n\n\"{testo}\"\n\n1 = {TB_Questionario.AncoraMin}     7 = {TB_Questionario.AncoraMax}");
+            yield return null;                       // la X che ha chiuso la domanda precedente non conferma questa
+            slider.ApriLikert(TB_Questionario.Min, TB_Questionario.Max);
+            double t0 = Time.realtimeSinceStartupAsDouble;
+            yield return new WaitUntil(() => slider.Confermato || saltaQuestionarioRichiesto);
+            if (!slider.Confermato) { slider.Chiudi(); break; }
+            double rt = (Time.realtimeSinceStartupAsDouble - t0) * 1000.0;
+            slider.Chiudi();
+            logger.ScriviItem(blocco, cond, it.id, k + 1, slider.Valore, slider.ValoreIniziale, rt, testo);
+            Testo("");
+            yield return new WaitForSecondsRealtime(0.3f);
+        }
+        if (saltaQuestionarioRichiesto) Debug.LogWarning($"[TB] Questionario del blocco {blocco} interrotto dallo sperimentatore alla domanda {ItemCorrente}/{items.Count}");
+        saltaQuestionarioRichiesto = false;
+        ItemCorrente = 0; ItemTotali = 0;
         Testo("");
     }
 
