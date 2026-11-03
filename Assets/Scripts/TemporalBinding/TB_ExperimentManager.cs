@@ -49,6 +49,9 @@ public class TB_ExperimentManager : MonoBehaviour
     [Header("Avvio")]
     public KeyCode tastoAvvio = KeyCode.S;
     public bool saltaFamiliarizzazione = false;
+    [Tooltip("Ripresa di una sessione interrotta: parte da questo blocco della sequenza (1 = dall'inizio). " +
+             "Se > 1 la familiarizzazione si salta e il log è un file nuovo con gli stessi codice/numero.")]
+    [Min(1)] public int bloccoIniziale = 1;
 
     readonly Dictionary<TB_Effettore, List<double>> latenzeAttive = new Dictionary<TB_Effettore, List<double>>
     {
@@ -109,7 +112,10 @@ public class TB_ExperimentManager : MonoBehaviour
         if (!valido)
             return "Compila Codice_Soggetto e NumeroSoggetto (intero da 1)\nnel componente ParticipantInfo, poi premi X" + prova;
         return $"Soggetto {codice} (n. {n}) - sequenza {Sequenza(n)}/{2 * TB_Condizione.Tutte.Length}\n" +
-               string.Join(" > ", OrdineWilliams(n).Select(c => c.Nome)) + "\n\nPremi X per iniziare" + prova;
+               string.Join(" > ", OrdineWilliams(n).Select(c => c.Nome)) +
+               (bloccoIniziale > 1 ? $"\nRIPRESA dal blocco {Mathf.Min(bloccoIniziale, TB_Condizione.Tutte.Length)}: " +
+                                     OrdineWilliams(n)[Mathf.Min(bloccoIniziale, TB_Condizione.Tutte.Length) - 1].Nome : "") +
+               "\n\nPremi X per iniziare" + prova;
     }
 
     [Header("Prova (tasti 1-5 fuori sessione)")]
@@ -147,7 +153,9 @@ public class TB_ExperimentManager : MonoBehaviour
         Debug.Log($"[TB] Sessione: soggetto {soggetto} n. {n}, sequenza Williams {Sequenza(n)}: {string.Join(" > ", ordine.Select(c => c.Nome))}; " +
                   $"familiarizzazione {string.Join(" > ", OrdineFamiliarizzazione(n))}");
 
-        if (!saltaFamiliarizzazione)
+        int primo = Mathf.Clamp(bloccoIniziale, 1, ordine.Count) - 1;
+        if (primo > 0) Debug.Log($"[TB] Ripresa dal blocco {primo + 1}/{ordine.Count} ({ordine[primo].Nome}), familiarizzazione saltata");
+        if (!saltaFamiliarizzazione && primo == 0)
         {
             foreach (var eff in OrdineFamiliarizzazione(n))
             {
@@ -164,7 +172,7 @@ public class TB_ExperimentManager : MonoBehaviour
             }
         }
 
-        for (int b = 0; b < ordine.Count; b++)
+        for (int b = primo; b < ordine.Count; b++)
         {
             var cond = ordine[b];
             yield return Pausa(TestoBlocco(cond, b + 1, ordine.Count), cond);

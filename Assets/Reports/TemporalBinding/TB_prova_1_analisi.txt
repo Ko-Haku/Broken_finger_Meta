@@ -1,0 +1,84 @@
+Sequenza: Mano_Attivo-Mano_Passivo-Esterno-Tool_Attivo-Tool_Passivo
+
+== Qualità per blocco
+              trial  zero_frame  delay_entro_1frame  err_med  err_max  fps_med  rt_med  lat_med  mov_mano_med
+Condizione                                                                                                   
+Mano_Attivo      40           7                  36      1.8     18.7     63.0  2620.5    835.2           0.0
+Mano_Passivo     40           2                  36      2.7     17.8     61.0  3130.0    705.2          19.2
+Tool_Attivo      40           0                  36      3.5   1937.5     53.0  1694.0    998.9           0.0
+Tool_Passivo     40           0                  36      1.3     18.9     50.0  1586.5   1228.0          17.2
+Esterno          40           4                  37      1.0    341.1     63.0  2110.0    849.0          22.0
+
+Trial analizzati (delay entro 1 frame): 181 / 200
+Stime anomale (>3 MAD): 8
+
+== Stima media (ms) per condizione x delay  [media ± ES, n]
+                                mean   sem  median  size
+Condizione   DelayNominale_ms                           
+Esterno      150               268.0  35.0   258.0    11
+             450               577.0  36.0   520.0    13
+             750               782.0  41.0   846.0    13
+Mano_Attivo  150               300.0  26.0   289.0    11
+             450               650.0  36.0   618.0    13
+             750               757.0  50.0   820.0    12
+Mano_Passivo 150               351.0  40.0   316.0     8
+             450               413.0  24.0   396.0    14
+             750               464.0  42.0   471.0    14
+Tool_Attivo  150               280.0  42.0   244.0    10
+             450               603.0  37.0   621.0    12
+             750               646.0  43.0   654.0    14
+Tool_Passivo 150               410.0  41.0   382.0     9
+             450               532.0  20.0   541.0    13
+             750               576.0  47.0   540.0    14
+
+ DelayNominale_ms    150    450    750  Media
+Condizione                                  
+Mano_Attivo       300.0  650.0  757.0  569.0
+Mano_Passivo      351.0  413.0  464.0  409.0
+Tool_Attivo       280.0  603.0  646.0  509.0
+Tool_Passivo      410.0  532.0  576.0  506.0
+Esterno           268.0  577.0  782.0  542.0
+
+== Pendenza stima~delay (sensibilità all'intervallo) e intercetta
+Mano_Attivo   pendenza 0.76  intercetta   232  r=0.79  stima-reale media  +120 ms
+Mano_Passivo  pendenza 0.19  intercetta   326  r=0.34  stima-reale media   -81 ms
+Tool_Attivo   pendenza 0.58  intercetta   247  r=0.68  stima-reale media   +46 ms
+Tool_Passivo  pendenza 0.27  intercetta   388  r=0.44  stima-reale media   +27 ms
+Esterno       pendenza 0.85  intercetta   160  r=0.85  stima-reale media   +91 ms
+
+== Confronti (negativo = intervalli stimati più corti = più binding nel primo)
+Mano: Attivo - Passivo (binding intenzionale)   +159 ms   d≈+0.93   p(perm)=0.000
+Pinzetta: Attivo - Passivo                     +3 ms   d≈+0.02   p(perm)=0.921
+Mano attivo - Esterno                         +27 ms   d≈+0.20   p(perm)=0.397
+Pinzetta attivo - Esterno                     -33 ms   d≈-0.24   p(perm)=0.315
+Mano passivo - Esterno                       -133 ms   d≈-0.80   p(perm)=0.000
+Pinzetta passivo - Esterno                    -36 ms   d≈-0.24   p(perm)=0.312
+Attivo: Mano - Pinzetta                       +59 ms   d≈+0.43   p(perm)=0.060
+Interazione (binding mano - binding pinzetta): +156 ms
+
+== Ancoraggio allo slider: correlazione SliderStart-Stima (residui per delay)
+rho=0.05 p=0.480
+
+== Deriva nel blocco: correlazione Trial-residuo per condizione
+Mano_Attivo   rho=+0.21 p=0.218
+Mano_Passivo  rho=-0.22 p=0.199
+Tool_Attivo   rho=-0.03 p=0.853
+Tool_Passivo  rho=+0.13 p=0.440
+Esterno       rho=-0.19 p=0.250
+
+== Robustezza: solo trial con 0 frame persi
+              size   mean
+Condizione               
+Mano_Attivo    7.0  385.0
+Mano_Passivo   2.0  421.0
+Tool_Attivo    NaN    NaN
+Tool_Passivo   NaN    NaN
+Esterno        4.0  273.0
+
+== Robustezza: tutti i trial (anche delay sbagliati), mediane
+Condizione
+Mano_Attivo     602.5
+Mano_Passivo    397.5
+Tool_Attivo     522.0
+Tool_Passivo    509.0
+Esterno         574.5
